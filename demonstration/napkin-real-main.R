@@ -1,29 +1,30 @@
 library(mise)
 mise()
 
-simMode = c("Synthetic","Real")
-
-mismode = 0
-distortval = 0.3
-
 source('napkin-real-data.R')
 source('napkin-real-naive.R')
 source('napkin-real-plugin.R')
 source('napkin-real-DR.R')
 source('napkin-real-WERM.R')  
+
+mismode = 0
+distortval = 0.1
+
 seednum = sample(1:10000000,1)
-N = 50; Nintv = 100000
-tmp = dataGen(seednum,N,Nintv)
-OBS = tmp[[1]]
-answer = NaiveEstimator(OBS)
-Xunique = unique(OBS$X)[order(unique(OBS$X))]
-obsans = rep(0,length(Xunique))
-idx = 1
-yval = 1 
-for (xval in Xunique){
-  obsans[idx] = nrow(subset(OBS,X==xval & Y==yval))/nrow(subset(OBS,X==xval))
-  idx = idx + 1 
-}
+N = 1000
+tmp = dataGen(seednum,N)
+OBS.Large = tmp[[1]]
+OBS = tmp[[2]]
+answer = NaiveEstimator(OBS.Large)
+
+# Xunique = unique(OBS$X)[order(unique(OBS$X))]
+# obsans = rep(0,length(Xunique))
+# idx = 1
+# yval = 1 
+# for (xval in Xunique){
+#   obsans[idx] = nrow(subset(OBS,X==xval & Y==yval))/nrow(subset(OBS,X==xval))
+#   idx = idx + 1 
+# }
 
 PIanswer = PlugInEstimator(OBS,mismode)
 DRanswer = DREstimator(OBS,mismode)

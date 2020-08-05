@@ -62,8 +62,8 @@ DREstimator = function(OBS,mismode){
       Ixy.distorted = Ix.distorted*Iy.distorted
     }
     
-    ## Compute P(x,y|R,W)
-    ### Compute P(x,y|R,W)
+    ## Training P(x,y|R,W)
+
     if (mismode == 1){
       model.xy.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ixy.distorted, regval = rep(0,nrow(DATA)),binommode = 1)
     }else{

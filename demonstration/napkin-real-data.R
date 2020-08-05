@@ -3,7 +3,43 @@ library(MASS)
 library(nnet)
 library(mise)
 
-dataGen = function(seednum,N,Ninv){
+returnUnique = function(OBS){
+  W = OBS[,1] # High dim surrogate
+  R = OBS[,2] # Cofounder 0-numCate
+  X = OBS[,3]
+  Y = OBS[,4]
+  Wunique = unique(W)[order(unique(W))]
+  Runique = unique(R)[order(unique(R))]
+  Xunique = unique(X)[order(unique(X))]
+  Yunique = unique(Y)[order(unique(Y))]
+  return(list(Wunique,Runique,Xunique,Yunique))
+}
+
+goodSample = function(OBS,mysize){
+  OBSuniqueList = returnUnique(OBS)
+  trialnum = 0
+  stopSwitch = TRUE
+  while(1){
+    stopSwitch = TRUE 
+    trialnum = trialnum + 1 
+    sampled_idx = sample(c(1:nrow(OBS)),size=mysize)
+    OBS.sampled = OBS[sampled_idx,]
+    OBSSampleuniqueList = returnUnique(OBS.sampled)
+    for (idx in 1:4){
+      if (identical(OBSSampleuniqueList,OBSuniqueList) == FALSE){
+        stopSwitch = FALSE 
+      }
+    }
+    if (stopSwitch == TRUE){
+      break
+    }
+  }
+  rownames(OBS.sampled) = c(1:nrow(OBS.sampled))
+  return(OBS.sampled)
+}
+
+
+dataGen = function(seednum,N){
   set.seed(seednum)
   data(alarm)
   DATA = data.matrix(alarm) - 1 
@@ -29,7 +65,9 @@ dataGen = function(seednum,N,Ninv){
   
   # Making Napkin
   colnames(sampled_df) = c("K","W","R","X",'Y',"TPR","A","taking_idx")
-  OBS = sampled_df[,c("W","R","X","Y")]
-  return(list(OBS,OBS))
+  OBS.Large = sampled_df[,c("W","R","X","Y")]
+  OBS = goodSample(OBS.Large,N)
+  
+  return(list(OBS.Large,OBS))
 }
 
