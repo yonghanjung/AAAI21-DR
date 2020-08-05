@@ -81,41 +81,48 @@ DREstimator = function(OBS,mismode){
     Iy.eval = (OBS_eval$Y == yfix)*1
     Ixy.eval = Ix.eval*Iy.eval
     
-    if (mismode == 1){
-      Iy.distorted.train = xor((Iy.train * rbinom(n=length(Iy.train),size=1,prob=0.5)),rbinom(n=length(Iy.train),size=1,prob=0.5))*1
-      # Iy.distorted.eval = xor((Iy * rbinom(n=length(Iy.eval),size=1,prob=0.5)),rbinom(n=length(Iy.eval),size=1,prob=0.5))*1
-      
-      modeled_X.train = OBS_train$X 
-      modeled_X.train = modeled_X.train*2
-      modeled_X.train[modeled_X.train==4] = 1 
-
-      Ix.distorted.train = (modeled_X.train == xfix)*1
-      # Ix.distorted.eval = (modeled_X.eval == xfix)*1
-      
-      Ixy.distorted.train = Ix.distorted.train * Iy.distorted.train
-      # Ixy.distorted.eval = Ix.distorted.eval * Iy.distorted.eval
-    }
+    # if (mismode == 1){
+    #   Iy.distorted.train = xor((Iy.train * rbinom(n=length(Iy.train),size=1,prob=0.5)),rbinom(n=length(Iy.train),size=1,prob=0.5))*1
+    #   # Iy.distorted.eval = xor((Iy * rbinom(n=length(Iy.eval),size=1,prob=0.5)),rbinom(n=length(Iy.eval),size=1,prob=0.5))*1
+    #   
+    #   modeled_X.train = OBS_train$X 
+    #   modeled_X.train = modeled_X.train*2
+    #   modeled_X.train[modeled_X.train==4] = 1 
+    # 
+    #   Ix.distorted.train = (modeled_X.train == xfix)*1
+    #   # Ix.distorted.eval = (modeled_X.eval == xfix)*1
+    #   
+    #   Ixy.distorted.train = Ix.distorted.train * Iy.distorted.train
+    #   # Ixy.distorted.eval = Ix.distorted.eval * Iy.distorted.eval
+    # }
     
     ## Compute P(x,y|R,W)
     ### Train P(x,y|R,W)
-    if (mismode == 1){
-      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    }else{
-      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    }
+    model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
+    # if (mismode == 1){
+    #   model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
+    # }else{
+    #   
+    # }
     
     ### Evaluate P(x,y|R,W)
     prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=OBS_eval$R,W=OBS_eval$W)),type='response')
     prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)),W=OBS_eval$W)),type='response')
+    if (mismode == 1){
+      prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,0.1))
+      prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,0.1))
+    }
+    
     
     
     ## Compute P(x|R,W)
     ### Train P(x|R,W)
-    if (mismode == 1){
-      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    }else{
-      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    }
+    model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
+    # if (mismode == 1){
+    #   model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
+    # }else{
+    #   model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
+    # }
     ### Evaluate P(x|R,W)
     prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=OBS_eval$R, W=OBS_eval$W)),type='response')
     prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)), W=OBS_eval$W)),type='response')
@@ -161,7 +168,7 @@ DREstimator = function(OBS,mismode){
   YxDR = rep(0,length(Xunique))
   idx = 1 
   for (xval in Xunique){
-    YxDR[idx] = mean(ComputeDR(xval,OBS_train = OBS_train, OBS_eval = OBS_eval),ComputeDR(xval,OBS_train = OBS_eval, OBS_eval = OBS_train))  
+    YxDR[idx] = mean(ComputeDR(xval,OBS_train = OBS, OBS_eval = OBS),ComputeDR(xval,OBS_train = OBS, OBS_eval = OBS))  
     YxDR[idx] = max(YxDR[idx],0)
     YxDR[idx] = min(YxDR[idx],1)
     idx = idx + 1 

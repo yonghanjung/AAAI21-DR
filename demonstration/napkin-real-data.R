@@ -66,6 +66,9 @@ dataGen = function(seednum,N){
   # Making Napkin
   colnames(sampled_df) = c("K","W","R","X",'Y',"TPR","A","taking_idx")
   OBS.Large = sampled_df[,c("W","R","X","Y")]
+  if (N >= nrow(OBS.Large)){
+    N = nrow(OBS.Large)
+  }
   OBS = goodSample(OBS.Large,N)
   
   return(list(OBS.Large,OBS))

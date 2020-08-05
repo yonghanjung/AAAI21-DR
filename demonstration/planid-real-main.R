@@ -10,27 +10,15 @@ source('planid-real-plugin.R')
 source('planid-real-WERM.R')  
 source('planid-real-DR.R')
 
-seednum = sample(1:10000000,1)
-N = 1000; Nintv = 100000
-tmp = dataGen(seednum,N,Nintv)
-OBS = tmp[[1]]
-X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
-X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
-answer = NaiveEstimator(OBS,distortval,mismode)
+mismode = 0
+# distortval = 0.1
 
-obsans = rep(0,length(answer))
-idx = 1 
-for (x1val in X1unique){
-  for (x2val in X2unique){
-    OBSFiltered = subset(OBS, X1 == x1val & X2 == x2val)
-    if (nrow(OBSFiltered) == 0){
-      obsans[idx] = 0
-    }else{
-      obsans[idx] = mean(OBSFiltered$Y,na.rm=T)  
-    }
-    idx = idx + 1 
-  }
-}
+seednum = sample(1:10000000,1)
+N = 1000
+tmp = dataGen(seednum,N)
+OBS.Large = tmp[[1]]
+OBS = tmp[[2]]
+answer = NaiveEstimator(OBS.Large)
 
 PIanswer = PlugInEstimator(OBS,distortval,mismode)
 DRanswer = DREstimator(OBS,distortval,mismode)

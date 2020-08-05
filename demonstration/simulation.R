@@ -38,11 +38,11 @@ Nintv = 10^7
 # Example
 probleminstance = 'napkin'
 simRound = 100
-NumUnit = 50
-totalNumUnit = 20
+NumUnit = 500
+totalNumUnit = 10
 nidx.start = 1
 nidx.end = totalNumUnit
-corenum = 15
+numCores = 15
 
 filetitle = paste(probleminstance,'-0801-0222',sep="")
 
@@ -74,8 +74,10 @@ RunFunWithTime = function(TimeFUN, EstFUN, OBS,D,numCate,timelim){
   return(c(estval,esttime))
 }
 
+print(probleminstance)
+registerDoParallel(numCores)  # use multicore, set to the number of our cores
 
-
+Nlist = c(1:totalNumUnit)*NumUnit
 
 
 

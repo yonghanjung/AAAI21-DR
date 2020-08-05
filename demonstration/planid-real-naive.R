@@ -1,6 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-NaiveEstimator = function(OBS,distortval,mismode){
+NaiveEstimator = function(OBS){
   X1 = OBS[,1] 
   Z = OBS[,2] 
   R = OBS[,3] 
