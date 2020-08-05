@@ -1,6 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-DREstimator = function(OBS,distortval,mismode){
+DREstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -35,7 +35,6 @@ DREstimator = function(OBS,distortval,mismode){
     allpossible[rowidx,'prob'] = nrow(filterDATA)/Ndata
   }
   
-  
   ComputeDR = function(xfix){
     # Choose the fixed R 
     RProb = rep(0,0,0)
@@ -54,45 +53,67 @@ DREstimator = function(OBS,distortval,mismode){
     Iy = (Y == yfix)*1
     Ixy = Ix*Iy
     
+    if (mismode == 1){
+      Iy.distorted = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
+      modeled_X = X 
+      modeled_X = modeled_X*2
+      modeled_X[modeled_X==4] = 1 
+      Ix.distorted = (modeled_X == xfix)*1
+      Ixy.distorted = Ix.distorted*Iy.distorted
+    }
+    
     ## Compute P(x,y|R,W)
     ### Compute P(x,y|R,W)
-    model.xy.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ixy, regval = rep(0,nrow(DATA)),binommode = 1)
+    if (mismode == 1){
+      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ixy.distorted, regval = rep(0,nrow(DATA)),binommode = 1)
+    }else{
+      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ixy, regval = rep(0,nrow(DATA)),binommode = 1)  
+    }
     prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R,W)),type='response')
-    if (mismode == 1){
-      prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,distortval))
-    }
+    # if (mismode == 1){
+    #   prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,distortval))
+    # }
     ### Compute P(x|R,W)
-    model.x.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ix, regval = rep(0,nrow(DATA)),binommode = 1)
-    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R,W)),type='response')
     if (mismode == 1){
-      prob.x.RW = fix_pred(mis_pred(prob.x.RW,distortval))
+      model.x.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ix.distorted, regval = rep(0,nrow(DATA)),binommode = 1)
+    }else{
+      model.x.RW = learnXG(inVar = data.matrix(data.frame(R,W)),labelval = Ix, regval = rep(0,nrow(DATA)),binommode = 1)  
     }
+    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R,W)),type='response')
+    # if (mismode == 1){
+    #   prob.x.RW = fix_pred(mis_pred(prob.x.RW,distortval))
+    # }
     
     ### Compute P(x,y|r,W)
     # model.xy.rW = learnXG(inVar = data.matrix(data.frame(rep(rfix,nrow(OBS)),W)),labelval = Ixy, regval = rep(0,nrow(DATA)),binommode = 1)
     prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS)),W)),type='response')
-    if (mismode == 1){
-      prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,distortval))
-    }
+    # if (mismode == 1){
+    #   prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,distortval))
+    # }
     
     ### Compute P(x|r,W)
     # model.x.rW = learnXG(inVar = data.matrix(data.frame(rep(rfix,nrow(OBS)),W)),labelval = Ix, regval = rep(0,nrow(DATA)),binommode = 1)
     prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS)),W)),type='response')
-    if (mismode == 1){
-      prob.x.rW = fix_pred(mis_pred(prob.x.rW,distortval))
-    }
+    # if (mismode == 1){
+    #   prob.x.rW = fix_pred(mis_pred(prob.x.rW,distortval))
+    # }
     
     ### Compute P(R|W)
-    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = R, regval = rep(0,nrow(DATA)),binommode = 0)
+    modeled_R = R 
+    if (mismode == 2){
+      modeled_R = 2* modeled_R
+      modeled_R[modeled_R==4] = 1
+    }
+    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = modeled_R, regval = rep(0,nrow(DATA)),binommode = 0)
     pred.R.W = predict(model.R.W,newdata=data.matrix(data.frame(W)),type='response')
     pred.R.W  = t(matrix(pred.R.W,nrow=3))
     prob.R.W = rep(0,nrow(DATA))
     for (idx in 1:nrow(DATA)){
       prob.R.W[idx] = pred.R.W[idx,(R[idx]+1)]
     }
-    if (mismode == 2){
-      prob.R.W = fix_pred(mis_pred(prob.R.W,distortval))
-    }
+    # if (mismode == 2){
+    #   prob.R.W = fix_pred(mis_pred(prob.R.W,distortval))
+    # }
 
     # Compute this by IPW 
     smallval = 0

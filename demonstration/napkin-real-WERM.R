@@ -2,7 +2,7 @@
 source('WERM_Heuristic.R')
 
 
-WERMEstimator = function(OBS,distortval,mismode){
+WERMEstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -36,15 +36,20 @@ WERMEstimator = function(OBS,distortval,mismode){
   }
   
   ### Compute P(R|W)
-  model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = R, regval = rep(0,nrow(DATA)),binommode = 0)
+  modeled_R = R 
+  if (mismode == 2){
+    modeled_R = 2* modeled_R
+    modeled_R[modeled_R==4] = 1
+    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = modeled_R, regval = rep(0,nrow(DATA)),binommode = 0)
+  }else{
+    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = modeled_R, regval = rep(0,nrow(DATA)),binommode = 0)  
+  }
+  
   pred.R.W = predict(model.R.W,newdata=data.matrix(data.frame(W)),type='response')
   pred.R.W  = t(matrix(pred.R.W,nrow=3))
   prob.R.W = rep(0,nrow(DATA))
   for (idx in 1:nrow(DATA)){
     prob.R.W[idx] = pred.R.W[idx,(R[idx]+1)]
-  }
-  if (mismode == 2){
-    prob.R.W = fix_pred(mis_pred(prob.R.W,distortval))
   }
   
   prob.R = mapply(function(rval){
@@ -52,13 +57,18 @@ WERMEstimator = function(OBS,distortval,mismode){
     return(jointprob.R)
   },DATA$R)
   
-  SW_importance_sampling = prob.R/prob.R.W
-  
-  Iy = (Y == 1)*1
   regvallist = seq(0,10,by=0.2)
+  SW_importance_sampling = prob.R/prob.R.W
   lambda_W = learnHyperParam(regvallist,data.matrix(data.frame(W=W,R=R)),SW_importance_sampling,0)
   learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),lambda_W)
-  lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
+  
+  Iy = (Y == 1)*1
+  if (mismode == 1){
+    Iy.distorted = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
+    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy.distorted,1)
+  }else{
+    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
+  }
   
   YxWERM = rep(0,length(Xunique))
   idx = 1 

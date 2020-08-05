@@ -1,6 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-PlugInEstimator = function(OBS,distortval,mismode){
+PlugInEstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -26,7 +26,10 @@ PlugInEstimator = function(OBS,distortval,mismode){
   
   # Compute P(Y=1 | w,r,x)
   ExpYParam_Real = function(myallpossible,DATA,yval){
-    Iy = (DATA$Y == yval)*1
+    Iy = (Y == yval)*1
+    if (mismode == 1){
+      Iy = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
+    }
     modelY = learnXG(as.matrix(DATA[,c('W','R','X')]),Iy,rep(0,length(Iy)),binommode = 1)
     evalMat = as.matrix(myallpossible[,c('W','R','X')])
     predval = predict(modelY,newdata=evalMat,type='response')
@@ -38,7 +41,12 @@ PlugInEstimator = function(OBS,distortval,mismode){
   
   # Compute P(x | w,r)
   ProbXParam_Real = function(myallpossible,DATA){
-    modelX = learnXG(as.matrix(DATA[,c('W','R')]),DATA$X,rep(0,length(X)),binommode = 0)
+    modeled_X = X 
+    if (mismode == 1){
+      modeled_X = 2*X 
+      modeled_X[modeled_X==4] = 1
+    }
+    modelX = learnXG(as.matrix(DATA[,c('W','R')]),modeled_X,rep(0,length(X)),binommode = 0)
     evalMat = as.matrix(myallpossible[,c('W','R')])
     predval = predict(modelX,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=3))
@@ -81,7 +89,7 @@ PlugInEstimator = function(OBS,distortval,mismode){
   
   # Compute P(w)
   PwTable = allpossible  
-  
+
   for (wval in Wunique){
     filtered_DATA_W = subset(DATA,W==wval)
     probval.W = nrow(filtered_DATA_W)/nrow(DATA)   

@@ -9,11 +9,9 @@ dataGen = function(seednum,N,Ninv){
   DATA = data.matrix(alarm) - 1 
   DATA = data.frame(DATA[,c('STKV','CCHL','HR','CO','BP','TPR','ANES')])
   
-  Prob.Snode.A_K = matrix(runif(length(unique(DATA$ANES)) * length(unique(DATA$STKV)),min=0,max=1)
-                            ,nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)) )
-  
-  # Prob.Snode.CO_HR = matrix(runif(length(unique(DATA$CO)) * length(unique(DATA$ANES)),min=0,max=1)
-  #                           ,nrow = length(unique(DATA$CO)),ncol = length(unique(DATA$ANES)) )
+  # Prob.Snode.A_K = matrix(runif(length(unique(DATA$ANES)) * length(unique(DATA$STKV)),min=0,max=1)
+  #                           ,nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)) )
+  Prob.Snode.A_K = matrix(c(0.15,0.75,0.8,0.2,0.3,0.7),nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)))
   
   mytheta = mapply(function(anesval,stkvval){
     rowidx_Pi = anesval+1 
