@@ -6,6 +6,7 @@ source('napkin-real-naive.R')
 source('napkin-real-plugin.R')
 source('napkin-real-DR.R')
 source('napkin-real-WERM.R')  
+source('napkin-real-DR-naive.R')
 
 mismode = 0
 distortval = 0.1
@@ -16,15 +17,9 @@ tmp = dataGen(seednum,N)
 OBS.Large = tmp[[1]]
 OBS = tmp[[2]]
 answer = NaiveEstimator(OBS.Large)
+DRNaiveanswer = DRNaiveEstimator(OBS.Large)
+answer = (answer + DRNaiveanswer)/2
 
-# Xunique = unique(OBS$X)[order(unique(OBS$X))]
-# obsans = rep(0,length(Xunique))
-# idx = 1
-# yval = 1 
-# for (xval in Xunique){
-#   obsans[idx] = nrow(subset(OBS,X==xval & Y==yval))/nrow(subset(OBS,X==xval))
-#   idx = idx + 1 
-# }
 
 PIanswer = PlugInEstimator(OBS,mismode)
 DRanswer = DREstimator(OBS,mismode)
