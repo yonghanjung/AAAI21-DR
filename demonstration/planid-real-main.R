@@ -14,8 +14,8 @@ mismode = 0
 # distortval = 0.1
 
 seednum = sample(1:10000000,1)
-N = 1000
-tmp = dataGen(seednum,N)
+N = 1000; Nmax = 5000
+tmp = dataGen(seednum,N,Nmax)
 OBS.Large = tmp[[1]]
 OBS = tmp[[2]]
 answer = NaiveEstimator(OBS.Large)
