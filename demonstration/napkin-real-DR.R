@@ -39,6 +39,10 @@ GoodSplit = function(OBS){
   return(list(OBS_1,OBS_2))
 }
 
+chooseR = function(){
+  
+}
+
 DREstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
@@ -81,51 +85,55 @@ DREstimator = function(OBS,mismode){
     Iy.eval = (OBS_eval$Y == yfix)*1
     Ixy.eval = Ix.eval*Iy.eval
     
-    # if (mismode == 1){
-    #   Iy.distorted.train = xor((Iy.train * rbinom(n=length(Iy.train),size=1,prob=0.5)),rbinom(n=length(Iy.train),size=1,prob=0.5))*1
-    #   # Iy.distorted.eval = xor((Iy * rbinom(n=length(Iy.eval),size=1,prob=0.5)),rbinom(n=length(Iy.eval),size=1,prob=0.5))*1
-    #   
-    #   modeled_X.train = OBS_train$X 
-    #   modeled_X.train = modeled_X.train*2
-    #   modeled_X.train[modeled_X.train==4] = 1 
-    # 
-    #   Ix.distorted.train = (modeled_X.train == xfix)*1
-    #   # Ix.distorted.eval = (modeled_X.eval == xfix)*1
-    #   
-    #   Ixy.distorted.train = Ix.distorted.train * Iy.distorted.train
-    #   # Ixy.distorted.eval = Ix.distorted.eval * Iy.distorted.eval
-    # }
-    
+    if (mismode == 1){
+      Iy.distorted.train = xor((Iy.train * rbinom(n=length(Iy.train),size=1,prob=0.5)),rbinom(n=length(Iy.train),size=1,prob=0.5))*1
+      # Iy.distorted.eval = xor((Iy * rbinom(n=length(Iy.eval),size=1,prob=0.5)),rbinom(n=length(Iy.eval),size=1,prob=0.5))*1
+
+      modeled_X.train = OBS_train$X
+      modeled_X.train = modeled_X.train*2
+      modeled_X.train[modeled_X.train==4] = 1
+
+      Ix.distorted.train = (modeled_X.train == xfix)*1
+      # Ix.distorted.eval = (modeled_X.eval == xfix)*1
+
+      Ixy.distorted.train = Ix.distorted.train * Iy.distorted.train
+      # Ixy.distorted.eval = Ix.distorted.eval * Iy.distorted.eval
+    }
+
     ## Compute P(x,y|R,W)
     ### Train P(x,y|R,W)
-    model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    # if (mismode == 1){
-    #   model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    # }else{
-    #   
-    # }
+    
+    if (mismode == 1){
+      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
+    }else{
+      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
+    }
     
     ### Evaluate P(x,y|R,W)
     prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=OBS_eval$R,W=OBS_eval$W)),type='response')
     prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)),W=OBS_eval$W)),type='response')
-    if (mismode == 1){
-      prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,0.1))
-      prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,0.1))
-    }
+    # if (mismode == 1){
+    #   prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,0.1))
+    #   prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,0.1))
+    # }
     
     
     
     ## Compute P(x|R,W)
     ### Train P(x|R,W)
-    model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    # if (mismode == 1){
-    #   model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    # }else{
-    #   model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    # }
+    # model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
+    if (mismode == 1){
+      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
+    }else{
+      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
+    }
     ### Evaluate P(x|R,W)
     prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=OBS_eval$R, W=OBS_eval$W)),type='response')
     prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)), W=OBS_eval$W)),type='response')
+    # if (mismode == 1){
+    #   prob.x.RW = fix_pred(mis_pred(prob.x.RW,0.1))
+    #   prob.x.rW = fix_pred(mis_pred(prob.x.rW,0.1))
+    # }
     
     ## Compute P(R|W)
     modeled_R.train = OBS_train$R 
@@ -151,8 +159,8 @@ DREstimator = function(OBS,mismode){
     # Compute this by IPW 
     smallval = 0
     
-    UIF_M1 = (Ir.eval*(Ixy.eval - prob.xy.RW)/(prob.R.W+smallval)) + prob.xy.rW 
-    UIF_M2 = (Ir.eval*(Ix.eval - prob.x.RW)/(prob.R.W+smallval)) + (prob.x.rW)
+    UIF_M1 = (Ir.eval*(Ixy.eval - prob.xy.RW)/(prob.R.W+smallval)) + (prob.xy.rW) 
+    UIF_M2 = (Ir.eval*(Ix.eval - prob.x.rW)/(prob.R.W+smallval)) + (prob.x.rW)
     prob.xy.dor = mean(UIF_M1)
     prob.x.dor = mean(UIF_M2)
     prob.y.dox = prob.xy.dor/prob.x.dor

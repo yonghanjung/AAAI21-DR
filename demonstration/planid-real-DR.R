@@ -1,6 +1,47 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
 
+returnUnique = function(OBS){
+  X1 = OBS[,1] 
+  Z = OBS[,2] 
+  R = OBS[,3] 
+  X2 = OBS[,4]  
+  Y = OBS[,5]
+  X1unique = unique(X1)[order(unique(X1))]
+  Zunique = unique(Z)[order(unique(Z))]
+  Runique = unique(R)[order(unique(R))]
+  X2unique = unique(X2)[order(unique(X2))]
+  Yunique = unique(Y)[order(unique(Y))]
+  return(list(X1unique,Zunique,Runique,X2unique,Yunique))
+}
+
+GoodSplit = function(OBS){
+  totalidx = c(1:nrow(OBS))
+  
+  while(1){
+    splitidx_1 = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
+    splitidx_2 = setdiff(totalidx,splitidx_1)
+    OBS_1 = OBS[splitidx_1,]
+    OBS_2 = OBS[splitidx_2,]
+    
+    Unique_1 = returnUnique(OBS_1)
+    Unique_2 = returnUnique(OBS_2)
+    stopSwitch = TRUE 
+    for (idx in 1:5){
+      if (identical(Unique_1,Unique_2) == FALSE){
+        stopSwitch = FALSE 
+      }
+    }
+    if (stopSwitch == TRUE){
+      break
+    }
+  }
+  rownames(OBS_1) = c(1:nrow(OBS_1))
+  rownames(OBS_2) = c(1:nrow(OBS_2))
+  return(list(OBS_1,OBS_2))
+}
+
+
 DREstimator = function(OBS,distortval,mismode){
   X1 = OBS[,1] 
   Z = OBS[,2] 
@@ -8,13 +49,6 @@ DREstimator = function(OBS,distortval,mismode){
   X2 = OBS[,4]  
   Y = OBS[,5]
   
-  yvalfix = 1 
-  Iy = (Y==yvalfix)*1
-
-  ############################################
-  # DATA setup 
-  ############################################
-  DATA = data.frame(X1,Z,R,X2,Y)
   X1unique = unique(X1)[order(unique(X1))]
   Zunique = unique(Z)[order(unique(Z))]
   Runique = unique(R)[order(unique(R))]
@@ -22,8 +56,27 @@ DREstimator = function(OBS,distortval,mismode){
   Yunique = unique(Y)[order(unique(Y))]
   
   ############################################
+  # DATA setup 
+  ############################################
+  DATA = data.frame(X1,Z,R,X2,Y)
+  DATA = subset(DATA,(is.na(X1) == FALSE)&(is.na(Z) == FALSE)&(is.na(R) == FALSE)&(is.na(X2) == FALSE)&(is.na(Y) == FALSE))
+  Ndata = nrow(DATA)
+  
+  tmp = GoodSplit(OBS)
+  OBS_train = tmp[[1]]
+  OBS_eval = tmp[[2]]
+  
+  yvalfix = 1 
+  Iy = (Y==yvalfix)*1
+  
+  
+  
+  
+  
+  ############################################
   # Learn Models 
   ############################################
+  
   model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Y, regval = rep(0,nrow(DATA)),binommode = 1)
   model.X2.ZX1 = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2, regval = rep(0,nrow(DATA)),binommode = 0)
   model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1)),labelval = R, regval = rep(0,nrow(DATA)),binommode = 0)

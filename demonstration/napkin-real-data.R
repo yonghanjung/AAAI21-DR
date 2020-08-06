@@ -39,7 +39,7 @@ goodSample = function(OBS,mysize){
 }
 
 
-dataGen = function(seednum,N){
+dataGen = function(seednum,N,Nmax){
   set.seed(seednum)
   data(alarm)
   DATA = data.matrix(alarm) - 1 
@@ -56,10 +56,15 @@ dataGen = function(seednum,N){
     return(result_val)
   },DATA$ANES,DATA$STKV)
   
-  DATA[,'mytheta'] = mytheta
-  taking_idx = sapply(mytheta,function(p) rbinom(1,1,p))
-  DATA$taking_idx = taking_idx
-  sampled_df = subset(DATA,taking_idx==1)
+  while(1){
+    DATA[,'mytheta'] = mytheta
+    taking_idx = sapply(mytheta,function(p) rbinom(1,1,p))
+    DATA$taking_idx = taking_idx
+    sampled_df = subset(DATA,taking_idx==1)
+    if (nrow(sampled_df) > Nmax){
+      break 
+    }
+  }
   rownames(sampled_df) = c(1:nrow(sampled_df))
   summary(sampled_df)
   

@@ -8,15 +8,19 @@ source('napkin-real-DR.R')
 source('napkin-real-WERM.R')  
 source('napkin-real-DR-naive.R')
 
-mismode = 1
+mismode = 0
 distortval = 0.1
 
 seednum = sample(1:10000000,1)
-N = 5000
-tmp = dataGen(seednum,N)
+N = 500; Nmax = 5000
+tmp = dataGen(seednum,N,Nmax)
 OBS.Large = tmp[[1]]
 OBS = tmp[[2]]
+# OBS = OBS.Large
+# answer1 = NaiveEstimator(OBS.Large)
 answer = NaiveEstimator(OBS.Large)
+# answer2 = DRNaiveEstimator(OBS.Large)
+# answer = mean(c(answer1,answer2))
 
 PIanswer = PlugInEstimator(OBS,mismode)
 DRanswer = DREstimator(OBS,mismode)

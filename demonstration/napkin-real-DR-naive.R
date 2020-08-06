@@ -106,6 +106,9 @@ DRNaiveEstimator = function(OBS){
     prob.xy.dor = mean((Ir*(Ixy - prob.xy.RW)/(prob.R.W+smallval)) + prob.xy.rW)
     prob.x.dor = mean((Ir*(Ix - prob.x.RW)/(prob.R.W+smallval)) + (prob.x.rW))
     prob.y.dox = prob.xy.dor/prob.x.dor
+    prob.xy.dor.Truth = prob.xy.dor
+    prob.x.dor.Truth = prob.x.dor
+    prob.y.dox.Truth = prob.y.dox
     
     UIF_M1 = (Ir*(Ixy - prob.xy.RW)/(prob.R.W+smallval)) + prob.xy.rW 
     UIF_M2 = (Ir*(Ix - prob.x.RW)/(prob.R.W+smallval)) + (prob.x.rW)
