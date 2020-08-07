@@ -39,10 +39,6 @@ GoodSplit = function(OBS){
   return(list(OBS_1,OBS_2))
 }
 
-chooseR = function(){
-  
-}
-
 DREstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate

@@ -24,7 +24,7 @@ NaiveEstimator = function(OBS){
   colnames(allpossible) = c('X1','Z','R','X2')
   
   zeroval_handle = 0
-  # Compute P(Y=1 | w,r,x)
+  # Compute P(Y=1 | x1,z,r,x2)
   Expect.Y = function(myallpossible,DATA,yval){
     newcol = (ncol(myallpossible)+1)
     for (x1val in X1unique){
@@ -37,9 +37,6 @@ NaiveEstimator = function(OBS){
               probY = nrow(filtered_DATA_Y)/nrow(filtered_DATA)   
             }else{
               probY = zeroval_handle 
-            }
-            if (mismode == 1){
-              probY = fix_pred(mis_pred(probY,distortval))
             }
             myallpossible[myallpossible$X1==x1val & myallpossible$Z==zval & myallpossible$R==rval & myallpossible$X2==x2val,newcol] = probY 
           }

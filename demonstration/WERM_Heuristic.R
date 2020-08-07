@@ -113,8 +113,35 @@ learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
   # (1/3) of covariates are used for traning 
   # the rest (2/3) of covariates are used for testing  
   ############################
-  trainidx = sample(1:nrow(invar),nrow(invar)/3) # Randomly split the data index (1/3, 2/3). 
-  testidx = setdiff(c(1:nrow(invar)),trainidx)
+  WERMGoodSplit = function(mylabelWERM){
+    totalidx = c(1:length(mylabelWERM))
+    totalIter = 100
+    iteridx = 0
+    while(1){
+      iteridx = iteridx + 1 
+      splitidx_1 = sample(totalidx,size=length(mylabelWERM)/2)
+      splitidx_2 = setdiff(totalidx,splitidx_1)
+      label_1 = mylabelWERM[splitidx_1]
+      label_2 = mylabelWERM[splitidx_2]
+      
+      Unique_1 = unique(label_1)[order(unique(label_1))]
+      Unique_2 = unique(label_2)[order(unique(label_2))]
+      if (identical(Unique_1,Unique_2)){
+        break
+      }
+      if (iteridx > totalIter){
+        splitidx_1 = totalidx
+        splitidx_2 = totalidx
+        break
+      }
+    }
+    return(list(splitidx_1,splitidx_2))
+  }
+  
+  mysplitList = WERMGoodSplit(mylabel)
+  trainidx = mysplitList[[1]]; testidx = mysplitList[[2]];
+  # trainidx = sample(1:nrow(invar),nrow(invar)/3) # Randomly split the data index (1/3, 2/3). 
+  # testidx = setdiff(c(1:nrow(invar)),trainidx)
   DATAtrain = invar[trainidx,] # An input covariate used for training  
   DATAtest = invar[testidx,] # An input covariate used for testing 
   
@@ -134,7 +161,7 @@ learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
     }
     
     if (learningbinary == 0){ # If the output value is non-binary
-      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2)
+      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(trainlabel)))
       predval = predict(model_XG,newdata=as.matrix(DATAtest))
       performancerecord[idx] = sum(abs(predval - testlabel))  
     }else{ # If the output value is binary

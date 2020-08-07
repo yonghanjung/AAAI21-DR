@@ -97,19 +97,19 @@ dataGen = function(seednum,N,Nmax){
   #                           ,nrow = length(unique(Val1)),ncol = length(unique(Val2)) )
   
   # Prob.S.PMB.VMCH = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
-  Prob.S.PMB.VMCH = matrix(c(0.75,0.85,0.8,0.82,0.76,0.53,0.9,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
+  Prob.S.PMB.VMCH = matrix(c(0.75,0.85,0.6,0.82,0.76,0.53,0.7,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   
   # Prob.S.VMCH.SHNT = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
-  Prob.S.VMCH.SHNT = matrix(c(0.85,0.94,0.8,0.65,0.76,0.53,0.82,0.85),nrow = length(unique(DATA$VMCH)),ncol = length(unique(DATA$SHNT)) )
+  Prob.S.VMCH.SHNT = matrix(c(0.85,0.54,0.8,0.65,0.76,0.53,0.82,0.85),nrow = length(unique(DATA$VMCH)),ncol = length(unique(DATA$SHNT)) )
   
   # Prob.S.SHNT.KINK = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$KINK)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$KINK)) )
-  Prob.S.SHNT.KINK = matrix(c(0.95,0.85,0.75,0.85),nrow = length(unique(DATA$SHNT)), ncol = length(unique(DATA$KINK)) )
+  Prob.S.SHNT.KINK = matrix(c(0.75,0.85,0.75,0.85),nrow = length(unique(DATA$SHNT)), ncol = length(unique(DATA$KINK)) )
   
   # Prob.S.PMB.TPR = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$TPR)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
   Prob.S.PMB.TPR = matrix(c(0.87,0.75,0.85,0.75,0.7,0.6),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
   
   # Prob.S.DISC.ANES = matrix(runif(length(unique(DATA$DISC)) * length(unique(DATA$ANES)),min=0.5,max=1),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
-  Prob.S.DISC.ANES = matrix(c(0.92,0.85,0.75,0.5),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
+  Prob.S.DISC.ANES = matrix(c(0.89,0.85,0.75,0.5),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
   
   while(1){
     DATA_sampled = dataSampling_S(Val1 = DATA$PMB, Val2 = DATA$VMCH, Prob.S.PMB.VMCH,DATA, covariate_to_keep) # S1

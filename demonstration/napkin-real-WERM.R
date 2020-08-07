@@ -65,10 +65,12 @@ WERMEstimator = function(OBS,mismode){
   Iy = (Y == 1)*1
   if (mismode == 1){
     Iy.distorted = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
-    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy.distorted,1)
+    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
+    Iy = Iy.distorted
   }else{
     lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
   }
+  
   
   YxWERM = rep(0,length(Xunique))
   idx = 1 
