@@ -2,7 +2,7 @@
 source('WERM_Heuristic.R')
 
 
-WERMEstimator = function(OBS,mismode){
+WERMEstimator = function(OBS,mismode, seednum){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -70,7 +70,6 @@ WERMEstimator = function(OBS,mismode){
   }else{
     lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
   }
-  
   
   YxWERM = rep(0,length(Xunique))
   idx = 1 

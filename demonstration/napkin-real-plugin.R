@@ -1,6 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-PlugInEstimator = function(OBS,mismode){
+PlugInEstimator = function(OBS,mismode,seednum){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]

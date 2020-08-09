@@ -1,6 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-PlugInEstimator = function(OBS,distortval,mismode){
+PlugInEstimator = function(OBS,mismode,seednum){
   X1 = OBS[,1] 
   Z = OBS[,2] 
   R = OBS[,3] 
@@ -13,6 +13,18 @@ PlugInEstimator = function(OBS,distortval,mismode){
   Runique = unique(R)[order(unique(R))]
   X2unique = unique(X2)[order(unique(X2))]
   Yunique = unique(Y)[order(unique(Y))]
+  
+  
+  IyTrain = Y 
+  X2Train = X2
+  Rtrain = R 
+  if (mismode == 1){
+    IyTrain = distortVar(IyTrain,seednum)
+    X2Train = distortVar(X2Train,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
   
   # Setting
   tmp = c()
@@ -28,7 +40,7 @@ PlugInEstimator = function(OBS,distortval,mismode){
   ## Compute P(y|x1,z,r,x2)
   Expect.Y = function(myallpossible,DATA,yval){
     Iy = (DATA$Y == yval)*1
-    modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),Iy,rep(0,length(Iy)),binommode = 1)
+    modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,rep(0,length(Iy)),binommode = 1)
     evalMat = as.matrix(myallpossible[,c('X1','Z','R','X2')])
     predval = predict(modelY,newdata=evalMat,type='response')
     newcol = (ncol(myallpossible)+1)
@@ -54,7 +66,7 @@ PlugInEstimator = function(OBS,distortval,mismode){
   }
   ## Compute P(r|x1)
   Prob.R.X1 = function(myallpossible,DATA){
-    modelR = learnXG(as.matrix(DATA[,c('X1')]),R,rep(0,length(R)),binommode = 0)
+    modelR = learnXG(as.matrix(DATA[,c('X1')]),Rtrain,rep(0,length(R)),binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelR,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=length(Runique)))

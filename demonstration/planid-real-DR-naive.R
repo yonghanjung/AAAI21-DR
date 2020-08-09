@@ -42,7 +42,7 @@ GoodSplit = function(OBS){
 }
 
 
-DRNaiveEstimator = function(OBS){
+DRNaiveEstimator = function(OBS,mismode){
   X1 = OBS[,1] 
   Z = OBS[,2] 
   R = OBS[,3] 
@@ -130,11 +130,19 @@ DRNaiveEstimator = function(OBS){
       return(resultval)
     },DATA$X1,DATA$Z,DATA$R,DATA$X2)
     
+    if (mismode == 1){
+      pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,0.2))
+      pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,0.2))
+    }
+    
     prob.R.X1 = mapply(function(rvaliter,x1valiter){
       jointprob.RX1 = sum(allpossible[allpossible$R==rvaliter & allpossible$X1 == x1valiter,'prob'])
       jointprob.X1 = sum(allpossible[allpossible$X1 == x1valiter,'prob'])
       return(jointprob.RX1/jointprob.X1)
     },DATA$R,DATA$X1)
+    if (mismode == 2){
+      prob.R.X1 = fix_pred(mis_pred(prob.R.X1,0.2))
+    }
     
     prob.X2.ZX1 = mapply(function(x2valiter,zvaliter,x1valiter){
       jointprob.X2ZX1 = sum(allpossible[allpossible$X2==x2valiter & allpossible$Z == zvaliter & allpossible$X1 == x1valiter,'prob'])
@@ -177,6 +185,10 @@ DRNaiveEstimator = function(OBS){
       jointprob.X1 = sum(allpossible[allpossible$X1==x1valfix,'prob'])
       return(jointprob.rX1/jointprob.X1)
     },rep(rvalfix,nrow(DATA)),rep(x1valfix,nrow(DATA)))
+    if (mismode == 2){
+      prob.r.X1 = fix_pred(mis_pred(prob.r.X1,0.2))
+      prob.r.x1 = fix_pred(mis_pred(prob.r.x1,0.2))
+    }
     
     UIF_M2 = (Ix1/prob.X1)*(Ir-prob.r.X1)+prob.r.x1
     # EIF_M2 = UIF_M2 - mean(UIF_M2)
@@ -191,11 +203,11 @@ DRNaiveEstimator = function(OBS){
     ############################################
     UIF = rep(0,nrow(DATA))
     for (rvalfix in Runique){
-      UIF_M1 = compute_UIF_M1_Naive(DATA=DATA,allpossible = allpossible, yval=yvalfix,rvalfix=rvalfix,x2valfix=x2valfix)
+      UIF_M1 = compute_UIF_M1_Naive(DATA=DATA,allpossible = allpossible, yval=yvalfix, rvalfix=rvalfix, x2valfix=x2valfix)
       EIF_M1 = UIF_M1 - mean(UIF_M1,na.rm=T)
       
       UIF_M2 = compute_UIF_M2_Naive(DATA=DATA,allpossible = allpossible, x1valfix=x1valfix,rvalfix=rvalfix)
-      EIF_M2 = UIF_M1 - mean(UIF_M1,na.rm=T)
+      EIF_M2 = UIF_M2 - mean(UIF_M2,na.rm=T)
       
       UIF = UIF + UIF_M1*mean(UIF_M2,na.rm=T) + EIF_M2*mean(UIF_M1,na.rm=T)
     }
@@ -207,6 +219,8 @@ DRNaiveEstimator = function(OBS){
   for (x1valfix in X1unique){
     for (x2valfix in X2unique){
       Yx[idx] = compute_Yx(DATA=DATA,allpossible = allpossible, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix)    
+      Yx[idx] = max(Yx[idx],0)
+      Yx[idx] = min(Yx[idx],1)
       idx = idx + 1 
     }
   }

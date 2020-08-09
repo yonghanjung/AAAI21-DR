@@ -21,22 +21,30 @@ WERMEstimator = function(OBS,distortval,mismode){
   # Learn Prob model 
   ############################################
   # P(y | r,x1,x2,z)
-  model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Y, regval = rep(0,nrow(DATA)),binommode = 1)
+  yvalfix = 1 
+  Iy.Train = (Y==yvalfix)*1
+  X2train = X2 
+  Rtrain = R 
+  if (mismode == 1){
+    Iy.Train = distortVar(Iy.Train,seednum)
+    X2train = distortVar(X2train,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
+  model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Iy.Train, regval = rep(0,nrow(DATA)),binommode = 1)
   pred.Y = predict(model.Y,newdata=data.matrix(data.frame(X1,Z,R,X2)),type='response')
   prob.Y = pred.Y*Y + (1-pred.Y)*(1-Y)
-  if (mismode == 1){
-    prob.Y = fix_pred(mis_pred(prob.Y,distortval))
-  }
   
   # P(r | x1)
-  model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1)),labelval = R, regval = rep(0,nrow(DATA)),binommode = 0)
+  model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1)),labelval = Rtrain, regval = rep(0,nrow(DATA)),binommode = 0)
   pred.R = t(matrix(predict(model.R.X1, newdata=as.matrix(DATA$X1), type='response'), nrow=length(Runique)))
   prob.R.X1 = mapply(function(rowidx,rval){
     return(pred.R[rowidx,rval+1])
   },c(1:nrow(DATA)),R)
   
   # P(x2 | x1,z)
-  model.X2.X1Z = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2, regval = rep(0,nrow(DATA)),binommode = 0)
+  model.X2.X1Z = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2train, regval = rep(0,nrow(DATA)),binommode = 0)
   pred.X2 = t(matrix(predict(model.X2.X1Z, newdata=as.matrix(data.frame(X1,Z)), type='response'), nrow=length(X2unique)))
   prob.X2.X1Z = mapply(function(rowidx,x2val){
     return(pred.X2[rowidx,x2val+1])
@@ -69,7 +77,7 @@ WERMEstimator = function(OBS,distortval,mismode){
   for (idx in 1:bootstrap_iter){
     sampled_df = WERM_Sampler(DATA,SW_Y)
     # Learn Pw(y|r,x2)
-    model.weighted.Y.rx2 = learnXG(inVar = data.matrix(data.frame(R = sampled_df$R, X2 = sampled_df$X2)),labelval = Y, regval = rep(0,length(Y)), binommode = 1)
+    model.weighted.Y.rx2 = learnXG(inVar = data.matrix(data.frame(R = sampled_df$R, X2 = sampled_df$X2)),labelval = Iy.Train, regval = rep(0,length(Y)), binommode = 1)
     pred.weighted.Y.rx2 = predict(model.weighted.Y.rx2, newdata = data.matrix(data.frame(R, X2)),type='response')
     Prob.weighted.Y.rx2 = Y*pred.weighted.Y.rx2 + (1-Y)*(1-pred.weighted.Y.rx2)
     Ybox = Ybox + Prob.weighted.Y.rx2
@@ -100,48 +108,6 @@ WERMEstimator = function(OBS,distortval,mismode){
   
   return(Yx)
 }
-
-# 
-# source('planid-data.R')
-# source('planid-param.R')
-# # source('napkin-est.R')
-# # library('mise')
-# #
-# N = 1000
-# Nintv = 1000000
-# D = 1
-# numCate = 2
-# C = numCate - 1
-# mismode = 2
-# distortval = 0.2
-# 
-# seednum = sample(1:10000000,1)
-# # seednum = 1234
-# mytmp = dataGen(seednum,N,Nintv,D)
-# OBS = mytmp[[1]]
-# INTV = mytmp[[2]]
-# answer = c(mean(INTV[INTV$X1intv==0 & INTV$X2intv==0,'Yintv']),
-#            mean(INTV[INTV$X1intv==0 & INTV$X2intv==1,'Yintv']),
-#            mean(INTV[INTV$X1intv==1 & INTV$X2intv==0,'Yintv']),
-#            mean(INTV[INTV$X1intv==1 & INTV$X2intv==1,'Yintv'])
-# )
-# 
-# 
-# # naiveanswer = timeoutFun(naiveAdj(OBS,D,numCate),timelim)
-# dlanswer = dlAdj(OBS,D,distortval,mismode)
-# paramanswer = paramAdj(OBS,D,distortval,mismode)
-# 
-# dlperformance = mean(abs(answer-dlanswer),na.rm=T)
-# paramperformance = mean(abs(answer-paramanswer),na.rm=T)
-# print(round(dlperformance,4))
-# print(round(paramperformance,4))
-# 
-# # print(c(paste("Naive: ",round(naiveperformance,4),sep=""),paste("Multi: ",round(multiperformance,4),sep="")))
-# # if (naiveperformance < multiperformance){
-# #   print("Win: Naive")
-# # }else{
-# #   print("Win: Multi")
-# # }
 
 
 

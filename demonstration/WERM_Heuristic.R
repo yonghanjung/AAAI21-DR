@@ -14,6 +14,9 @@ library(arm)
 library(mgcv)
 library(mise)
 
+numRounds = 10 
+maxDepth = 20
+
 learnXG = function(inVar,labelval,regval,binommode){
   ############################
   # Objective
@@ -28,9 +31,9 @@ learnXG = function(inVar,labelval,regval,binommode){
   ############################
   # regval = ((max(labelval) - min(labelval))**1)/nrow(data_sampled)
   if (binommode == 1){
-    model_XG = xgboost(verbose = 0, data = inVar, label = labelval, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2,objective="binary:logistic")  
+    model_XG = xgboost(verbose = 0, data = inVar, label = labelval, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective="binary:logistic")  
   }else{
-    model_XG = xgboost(verbose = 0, data = inVar, label = labelval, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(labelval)))  
+    model_XG = xgboost(verbose = 0, data = inVar, label = labelval, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(labelval)))  
   }
   
   return(model_XG)
@@ -115,7 +118,7 @@ learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
   ############################
   WERMGoodSplit = function(mylabelWERM){
     totalidx = c(1:length(mylabelWERM))
-    totalIter = 100
+    totalIter = 5
     iteridx = 0
     while(1){
       iteridx = iteridx + 1 
@@ -161,11 +164,11 @@ learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
     }
     
     if (learningbinary == 0){ # If the output value is non-binary
-      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(trainlabel)))
+      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(trainlabel)))
       predval = predict(model_XG,newdata=as.matrix(DATAtest))
       performancerecord[idx] = sum(abs(predval - testlabel))  
     }else{ # If the output value is binary
-      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2,objective = "binary:logistic")
+      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective = "binary:logistic")
       predval = predict(model_XG,newdata=as.matrix(DATAtest),type='response')
       predval = (predval >= 0.5)*1
       performancerecord[idx] = sum((predval != testlabel ))
@@ -191,7 +194,7 @@ learnWdash = function(Wdash1_importance,inVar,regval){
   ############################
   
   # Construct the xgboost regression model 
-  model_Wdash1 = xgboost(verbose = 0, data = inVar, label = Wdash1_importance, nrounds = 20,max.depth=10,lambda=regval,alpha=regval/2)
+  model_Wdash1 = xgboost(verbose = 0, data = inVar, label = Wdash1_importance, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2)
   Wdash1 = predict(model_Wdash1,newdata = inVar, type='response')
   
   # Handling if W contains the negative value. 
@@ -204,11 +207,11 @@ learnWdash = function(Wdash1_importance,inVar,regval){
 WERM_Heuristic = function(inVar_train,inVar_eval,Y, Ybinary, lambda_h,learned_W,mismode,distortval){
   xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Y)
   if (Ybinary == 0){
-    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = 20,max.depth=20,lambda=lambda_h,alpha=lambda_h,weight = learned_W)
+    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=lambda_h,alpha=lambda_h,weight = learned_W)
   }else{
-    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = 20,max.depth=20,lambda=lambda_h,alpha=lambda_h,objective = "binary:logistic",weight = learned_W)
+    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=lambda_h,alpha=lambda_h,objective = "binary:logistic",weight = learned_W)
   }
-  modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = 20,max.depth=20,lambda=lambda_h,alpha=lambda_h,objective = "binary:logistic",weight = learned_W)
+  modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=lambda_h,alpha=lambda_h,objective = "binary:logistic",weight = learned_W)
   predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
   if (mismode == 1){
     predY = fix_pred(mis_pred(predY,distortval))
