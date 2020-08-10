@@ -71,14 +71,14 @@ DREstimator = function(OBS,mismode,seednum){
     X2train = DATA_Train$X2
     Rtrain = DATA_Train$R 
     
-    if (mismode == 1){
-      Iy.Train = distortVar(Iy.Train,seednum)
-      # Rtrain = distortVar(Rtrain,seednum)
-    }
-    if (mismode == 2){
-      # X2train = distortVar(X2train,seednum)
-      Rtrain = distortVar(Rtrain,seednum)
-    }
+    # if (mismode == 1){
+    #   Iy.Train = distortVar(Iy.Train,seednum)
+    #   # Rtrain = distortVar(Rtrain,seednum)
+    # }
+    # if (mismode == 2){
+    #   # X2train = distortVar(X2train,seednum)
+    #   Rtrain = distortVar(Rtrain,seednum)
+    # }
     
     # Iy.Test = (DATA_Eval$Y==yvalfix)*1
     Iy = (DATA$Y==yvalfix)*1
@@ -127,6 +127,11 @@ DREstimator = function(OBS,mismode,seednum){
     pred.Y.RX2.X1Z = predict(model.Y,
                              newdata=data.matrix(data.frame(X1=DATA_Eval$X1, Z=DATA_Eval$Z, R=DATA_Eval$R, X2=DATA_Eval$X2)),
                              type='response')
+    if (mismode == 1){
+      pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,0.2))
+      pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,0.2))
+    }
+    
     # if (mismode == 1){
     #   pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,distortval))
     # }
@@ -135,6 +140,9 @@ DREstimator = function(OBS,mismode,seednum){
     prob.R.X1 = mapply(function(idx,rval){
       pred.R.X1[idx,(rval+1)]
     },c(1:nrow(DATA_Eval)),DATA_Eval$R)
+    if (mismode == 2){
+      prob.R.X1 = fix_pred(mis_pred(prob.R.X1,0.2))
+    }
     # if (mismode == 1){
     #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1,distortval))
     # }
@@ -181,6 +189,11 @@ DREstimator = function(OBS,mismode,seednum){
     #   prob.r.X1 = fix_pred(mis_pred(prob.r.X1,distortval))
     # }
     prob.r.x1 = rep(predict(model.R.X1,newdata = data.matrix(data.frame(X1=x1valfix)),reshape=TRUE)[rvalfix+1],nrow(DATA_Eval))
+    if (mismode == 2){
+      prob.r.X1 = fix_pred(mis_pred(prob.r.X1,0.2))
+      prob.r.x1 = fix_pred(mis_pred(prob.r.x1,0.2))
+    }
+    
     UIF_M2 = ((Ix1/prob.X1)*(Ir-prob.r.X1))+prob.r.x1
     # EIF_M2 = UIF_M2 - mean(UIF_M2)
     return(UIF_M2)

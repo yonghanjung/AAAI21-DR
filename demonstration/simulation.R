@@ -22,7 +22,6 @@ library(tictoc)
 args = commandArgs(trailingOnly = TRUE)
 cores = detectCores()
 timeoutLim = 100
-Nintv = 10^7
 
 # probleminstance = args[1]
 # D = as.numeric(args[2])
@@ -63,7 +62,7 @@ timeoutFun = function(Fun, mytime){
 
 RunFunWithTime = function(TimeFUN, EstFUN, OBS, mismode, seednum ,timelim){
   tic()
-  estval = TimeFUN(EstFUN(OBS,D,numCate),timelim)
+  estval = TimeFUN(EstFUN(OBS,mismode,seednum),timelim)
   if(is.null(estval)==T){
     estval = NA
     esttime = NA 
@@ -81,37 +80,41 @@ returnSummary = function(myArray){
 }
 
 print(probleminstance)
-registerDoParallel(numCores)  # use multicore, set to the number of our cores
+# cl = makeSOCKcluster(numCores,outfile='Result/log-parallel.txt')
+registerDoParallel(numCore)  # use multicore, set to the number of our cores
 Nlist = c(1:totalNumUnit)*NumUnit
 
-mat.summary.ANSWER = matrix(0,nrow=totalN,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
-mat.summary.PlugIn = matrix(0,nrow=totalN,ncol=6)
-mat.summary.WERM = matrix(0,nrow=totalN,ncol=6)
-mat.summary.DR = matrix(0,nrow=totalN,ncol=6)
+mat.summary.ANSWER = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR = matrix(0,nrow=totalNumUnit,ncol=6)
 
-mat.total.ANSWER = matrix(0,nrow=totalN,ncol=simRound)
-mat.total.PlugIn = matrix(0,nrow=totalN,ncol=simRound)
-mat.total.WERM = matrix(0,nrow=totalN,ncol=simRound)
-mat.total.DR = matrix(0,nrow=totalN,ncol=simRound)
+mat.total.ANSWER = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR = matrix(0,nrow=totalNumUnit,ncol=simRound)
 
-Nmax = 10000
+Nmax = 5000
+mismode = 0
 
 for (nidx in nidx.start:nidx.end){
   N = Nlist[nidx]
   print(N)
   
-  pb <- txtProgressBar(max = simRound, style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress = progress)
+  # pb <- txtProgressBar(max = simRound, style = 3)
+  # progress <- function(n) setTxtProgressBar(pb, n)
+  # opts <- list(progress = progress)
   
   val.total = foreach(idx= 1:simRound, .combine = 'rbind', 
-                      .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc'),.options.snow = opts) %dopar% {
+                      .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc')) %dopar% {
                         
                         seednum = sample(1:10000000,1)
                         tmp = dataGen(seednum,N,Nmax)
                         OBS.Large = tmp[[1]]
                         OBS = tmp[[2]]
-                        answer = NaiveEstimator(OBS.Large)
+                        answer1 = NaiveEstimator(OBS.Large)
+                        # answer2 = DRNaiveEstimator(OBS.Large)
+                        answer = answer1 
                         
                         PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, seednum, mismode, timeoutLim)
                         DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, seednum, mismode, timeoutLim)
@@ -121,7 +124,7 @@ for (nidx in nidx.start:nidx.end){
                         performance_DR = mean(abs(answer-DRanswer), na.rm = T)
                         performance_WERM = mean(abs(answer-WERManswer), na.rm = T)
                         
-                        return(performance_PI, performance_DR, performance_WERM)
+                        return(c(performance_PI, performance_DR, performance_WERM))
                       }
   
   val.ANSWER = rep(0,simRound)
@@ -134,11 +137,32 @@ for (nidx in nidx.start:nidx.end){
   mat.total.DR[nidx,] = val.DR
   mat.total.WERM[nidx,] = val.WERM
   
-  mat.summary.ANSWER[nidx] = returnSummary(val.ANSWER)
-  mat.summary.PlugIN[nidx] = returnSummary(val.PlugIn)
-  mat.summary.DR[nidx] = returnSummary(val.DR)
-  mat.summary.WERM[nidx] = returnSummary(val.WERM)
+  mat.summary.ANSWER[nidx,] = returnSummary(val.ANSWER)
+  mat.summary.PlugIn[nidx,] = returnSummary(val.PlugIn)
+  mat.summary.DR[nidx,] = returnSummary(val.DR)
+  mat.summary.WERM[nidx,] = returnSummary(val.WERM)
 }
+
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM[,idx])
+}
+df.result = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                       DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                       PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                       WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result,paste("Result/",filetitle,"-summary.csv",sep=""))
+write.csv(mat.total.ANSWER,paste("Result/",filetitle,"-ANSWER.csv",sep=""))
+write.csv(mat.total.DR,paste("Result/",filetitle,"-DR.csv",sep=""))
+write.csv(mat.total.PlugIn,paste("Result/",filetitle,"-PlugIn.csv",sep=""))
+write.csv(mat.total.WERM,paste("Result/",filetitle,"-WERM.csv",sep=""))
+
+stopCluster(cl)  
 
 
 

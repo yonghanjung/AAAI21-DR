@@ -8,17 +8,17 @@ source('planid-real-WERM.R')
 source('planid-real-DR.R')
 source('planid-real-DR-naive.R')
 
-mismode = 0
+mismode = 1
 
 seednum = sample(1:10000000,1)
 # seednum = 4536437
-N = 5000; Nmax = 1000
+N = 500; Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
 OBS.Large = tmp[[1]]
 OBS = tmp[[2]]
 # OBS = OBS.Large
 answer1 = NaiveEstimator(OBS.Large)
-answer2 = DRNaiveEstimator(OBS,2)
+# answer2 = DRNaiveEstimator(OBS.Large,1)
 # answer = (answer1+answer2)/2
 answer = answer1
 

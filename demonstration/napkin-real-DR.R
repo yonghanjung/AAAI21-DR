@@ -39,7 +39,122 @@ GoodSplit = function(OBS){
   return(list(OBS_1,OBS_2))
 }
 
-DREstimator = function(OBS,mismode){
+DREstimator = function(OBS,mismode,seednum){
+  ####################################################
+  # TrainModel 
+  ####################################################
+  TrainModel = function(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode){
+    IyTrain = (DATA_Train$Y == yfix)*1
+    Rtrain = DATA_Train$R 
+    Xtrain = DATA_Train$X 
+    if (mismode == 1){
+      IyTrain = distortVar(IyTrain,seednum)
+      Xtrain = distortVar(Xtrain,seednum)
+    }
+    if (mismode == 2){
+      Rtrain = distortVar(Rtrain,seednum)
+    }
+    IxTrain = (Xtrain == xfix)*1
+    IxyTrain = IyTrain*IxTrain
+    
+    regvallist = seq(0,10,by=0.2)
+    lambda.XY = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxyTrain, learningbinary=1, TFcontinuous=F)
+    model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)),labelval = IxyTrain, regval = lambda.XY, binommode = 1)
+    
+    lambda.X = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxTrain, learningbinary=1, TFcontinuous=F)
+    model.x.RW = learnXG(inVar = data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)),labelval = IxTrain, regval = lambda.X, binommode = 1)
+    
+    lambda.R = learnHyperParam(regvallist=regvallist, invar = data.matrix(data.frame(W=DATA_Train$W)), mylabel=IxTrain, learningbinary=0, TFcontinuous=F)
+    model.R.W = learnXG(inVar = data.matrix(data.frame(W=DATA_Train$W)), labelval = Rtrain, regval = rep(0,nrow(DATA_Train)),binommode = 0)
+    
+    return(list(model.xy.RW, model.x.RW, model.R.W))
+  }
+  
+  ####################################################
+  # Choose R  
+  ####################################################
+  ChooseR = function(DATA,xfix){
+    # Choose the fixed R 
+    RProb = rep(length(Runique))
+    idx = 1
+    for (rval in Runique){
+      filtered_DATA = subset(DATA,R==rval & X==xfix)
+      RProb[idx] = nrow(filtered_DATA)/nrow(DATA)
+      idx = idx + 1 
+    } 
+    rfix = Runique[which.max(RProb)]
+    return(rfix)
+  }
+  
+  Compute_UIF_M1 = function(DATA_Train, DATA_Eval, trainedlist, yfix, xfix){
+    ############################################
+    # M1 =  M[x,y | r, W]
+    ############################################
+    model.xy.RW = trainedlist[[1]]; model.x.RW = trainedlist[[2]]; model.R.W = trainedlist[[3]]
+    
+    rfix = ChooseR(DATA_Eval,xfix)
+    IrEval = (DATA_Eval$R == rfix)*1
+    IxEval = (DATA_Eval$X == xfix)*1
+    IyEval = (DATA_Eval$Y == yfix)*1
+    IxyEval = IxEval * IyEval
+    
+    ### Evaluate P(x,y|R,W)
+    prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W=DATA_Eval$W)),type='response')
+    prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(DATA_Eval)),W=DATA_Eval$W)),type='response')
+    
+    ### Evaluate P(R|W)
+    pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=DATA_Eval$W)),type='response')
+    pred.R.W  = t(matrix(pred.R.W,nrow=length(Runique)))
+    prob.R.W = mapply(function(idx,riterval){
+      return(pred.R.W[idx,(riterval+1)])
+    },c(1:nrow(DATA_Eval)), DATA_Eval$R)
+    
+    UIF_M1 = (IrEval*(IxyEval - prob.xy.RW)/(prob.R.W)) + (prob.xy.rW) 
+    return(UIF_M1)
+  }
+  
+  Compute_UIF_M2 = function(DATA_Train, DATA_Eval, trainedlist, xfix){
+    ############################################
+    # M1 =  M[x,y | r, W]
+    ############################################
+    model.xy.RW = trainedlist[[1]]; model.x.RW = trainedlist[[2]]; model.R.W = trainedlist[[3]]
+    
+    rfix = ChooseR(DATA_Eval,xfix)
+    IrEval = (DATA_Eval$R == rfix)*1
+    IxEval = (DATA_Eval$X == xfix)*1
+
+    ### Evaluate P(x|R,W)
+    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R, W=DATA_Eval$W)),type='response')
+    prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(DATA_Eval)), W=DATA_Eval$W)),type='response')
+    
+    ### Evaluate P(R|W)
+    pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=DATA_Eval$W)),type='response')
+    pred.R.W  = t(matrix(pred.R.W,nrow=length(Runique)))
+    prob.R.W = mapply(function(idx,riterval){
+      return(pred.R.W[idx,(riterval+1)])
+    },c(1:nrow(DATA_Eval)), DATA_Eval$R)
+    
+    UIF_M2 = (IrEval*(IxEval - prob.x.RW)/(prob.R.W)) + (prob.x.rW) 
+    return(UIF_M2)
+  }
+  
+  Compute_Yx = function(DATA_Train, DATA_Eval, trainedlist, yfix, xfix){
+    UIF_M1 = Compute_UIF_M1(DATA_Train, DATA_Eval, trainedlist, yfix, xfix)
+    UIF_M2 = Compute_UIF_M2(DATA_Train, DATA_Eval, trainedlist, xfix)
+    
+    prob.xy.dor = mean(UIF_M1, na.rm=T)
+    prob.x.dor = mean(UIF_M2, na.rm=T)
+    prob.y.dox = prob.xy.dor/prob.x.dor
+    
+    EIF_M1 = UIF_M1 - prob.xy.dor
+    EIF_M2 = UIF_M2 - prob.x.dor
+    UIF = (1/(prob.x.dor))*(UIF_M1 - EIF_M2*prob.y.dox)
+    return(mean(UIF,na.rm=T))
+  }
+  
+  ####################################################
+  # Main 
+  ####################################################
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -50,129 +165,23 @@ DREstimator = function(OBS,mismode){
   Xunique = unique(X)[order(unique(X))]
   Yunique = unique(Y)[order(unique(Y))]
   
-  # Setting
   DATA = data.frame(cbind(W,R,X,Y))
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
   Ndata = nrow(DATA)
   
-  tmp = GoodSplit(OBS)
-  OBS_train = tmp[[1]]
-  OBS_eval = tmp[[2]]
+  tmp = GoodSplit(DATA)
+  DATA_Train = tmp[[1]]
+  DATA_Eval = tmp[[2]]
   
-  ComputeDR = function(xfix,OBS_train,OBS_eval){
-    # Choose the fixed R 
-    RProb = rep(0,0,0)
-    idx = 1
-    for (rval in Runique){
-      filtered_DATA = subset(OBS_eval,R==rval & X==xfix)
-      RProb[idx] = nrow(filtered_DATA)/nrow(OBS_eval)
-      idx = idx + 1 
-    } 
-    rfix = Runique[which.max(RProb)]
-    yfix = 1 
-    
-    Ir.train = (OBS_train$R == rfix)*1
-    Ix.train = (OBS_train$X == xfix)*1
-    Iy.train = (OBS_train$Y == yfix)*1
-    Ixy.train = Ix.train*Iy.train
-    
-    Ir.eval = (OBS_eval$R == rfix)*1
-    Ix.eval = (OBS_eval$X == xfix)*1
-    Iy.eval = (OBS_eval$Y == yfix)*1
-    Ixy.eval = Ix.eval*Iy.eval
-    
-    if (mismode == 1){
-      Iy.distorted.train = xor((Iy.train * rbinom(n=length(Iy.train),size=1,prob=0.5)),rbinom(n=length(Iy.train),size=1,prob=0.5))*1
-      # Iy.distorted.eval = xor((Iy * rbinom(n=length(Iy.eval),size=1,prob=0.5)),rbinom(n=length(Iy.eval),size=1,prob=0.5))*1
-
-      modeled_X.train = OBS_train$X
-      modeled_X.train = modeled_X.train*2
-      modeled_X.train[modeled_X.train==4] = 1
-
-      Ix.distorted.train = (modeled_X.train == xfix)*1
-      # Ix.distorted.eval = (modeled_X.eval == xfix)*1
-
-      Ixy.distorted.train = Ix.distorted.train * Iy.distorted.train
-      # Ixy.distorted.eval = Ix.distorted.eval * Iy.distorted.eval
-    }
-
-    ## Compute P(x,y|R,W)
-    ### Train P(x,y|R,W)
-    
-    if (mismode == 1){
-      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    }else{
-      model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ixy.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    }
-    
-    ### Evaluate P(x,y|R,W)
-    prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=OBS_eval$R,W=OBS_eval$W)),type='response')
-    prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)),W=OBS_eval$W)),type='response')
-    # if (mismode == 1){
-    #   prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,0.1))
-    #   prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,0.1))
-    # }
-    
-    
-    
-    ## Compute P(x|R,W)
-    ### Train P(x|R,W)
-    # model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)  
-    if (mismode == 1){
-      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.distorted.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    }else{
-      model.x.RW = learnXG(inVar = data.matrix(data.frame(R=OBS_train$R, W=OBS_train$W)),labelval = Ix.train, regval = rep(0,nrow(OBS_train)),binommode = 1)
-    }
-    ### Evaluate P(x|R,W)
-    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=OBS_eval$R, W=OBS_eval$W)),type='response')
-    prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(OBS_eval)), W=OBS_eval$W)),type='response')
-    # if (mismode == 1){
-    #   prob.x.RW = fix_pred(mis_pred(prob.x.RW,0.1))
-    #   prob.x.rW = fix_pred(mis_pred(prob.x.rW,0.1))
-    # }
-    
-    ## Compute P(R|W)
-    modeled_R.train = OBS_train$R 
-    modeled_R.eval = OBS_eval$R 
-    if (mismode == 2){
-      modeled_R.train = 2* modeled_R.train
-      modeled_R.train[modeled_R.train==4] = 1
-    }
-    ### Train P(R|W)
-    model.R.W = learnXG(inVar = data.matrix(data.frame(W=OBS_train$W)),labelval = modeled_R.train, regval = rep(0,nrow(OBS_train)),binommode = 0)
-    
-    ### Evaluate P(R|W)
-    pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=OBS_eval$W)),type='response')
-    pred.R.W  = t(matrix(pred.R.W,nrow=length(Runique)))
-    prob.R.W = rep(0,nrow(OBS_eval))
-    for (idx in 1:nrow(OBS_eval)){
-      prob.R.W[idx] = pred.R.W[idx,(OBS_eval$R[idx]+1)]
-    }
-    # if (mismode == 2){
-    #   prob.R.W = fix_pred(mis_pred(prob.R.W,distortval))
-    # }
-
-    # Compute this by IPW 
-    smallval = 0
-    
-    UIF_M1 = (Ir.eval*(Ixy.eval - prob.xy.RW)/(prob.R.W+smallval)) + (prob.xy.rW) 
-    UIF_M2 = (Ir.eval*(Ix.eval - prob.x.rW)/(prob.R.W+smallval)) + (prob.x.rW)
-    prob.xy.dor = mean(UIF_M1)
-    prob.x.dor = mean(UIF_M2)
-    prob.y.dox = prob.xy.dor/prob.x.dor
-    
-    EIF_M1 = UIF_M1 - mean(UIF_M1)
-    EIF_M2 = UIF_M2 - mean(UIF_M2)
-    
-    UIF = (1/(prob.x.dor))*(UIF_M1 - EIF_M2*prob.y.dox)
-    # UIF = (UIF_M1/prob.x.dor) - (EIF_M2/prob.x.dor)*(prob.xy.dor/prob.x.dor)
-    return(mean(UIF))
-  }
-  
+  yfix = 1 
   YxDR = rep(0,length(Xunique))
   idx = 1 
-  for (xval in Xunique){
-    YxDR[idx] = mean(ComputeDR(xval,OBS_train = OBS, OBS_eval = OBS),ComputeDR(xval,OBS_train = OBS, OBS_eval = OBS))  
+  for (xfix in Xunique){
+    trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
+    trainedlist2 = TrainModel(DATA_Eval, DATA_Train , DATA, xfix, yfix, mismode)
+    YxDR[idx] = mean(Compute_Yx(DATA_Train, DATA_Eval, trainedlist1, yfix, xfix),
+                     Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix), 
+                     na.rm=T)
     YxDR[idx] = max(YxDR[idx],0)
     YxDR[idx] = min(YxDR[idx],1)
     idx = idx + 1 

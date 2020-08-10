@@ -12,6 +12,18 @@ WERMEstimator = function(OBS,mismode, seednum){
   Xunique = unique(X)[order(unique(X))]
   Yunique = unique(Y)[order(unique(Y))]
   
+  yvalfix = 1 
+  IyTrain = (Y == yvalfix)*1
+  Rtrain = R 
+  Xtrain = X 
+  if (mismode == 1){
+    IyTrain = distortVar(IyTrain,seednum)
+    Xtrain = distortVar(Xtrain,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
+  
   # Setting
   DATA = data.frame(W,R,X,Y)
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
@@ -36,17 +48,9 @@ WERMEstimator = function(OBS,mismode, seednum){
   }
   
   ### Compute P(R|W)
-  modeled_R = R 
-  if (mismode == 2){
-    modeled_R = 2* modeled_R
-    modeled_R[modeled_R==4] = 1
-    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = modeled_R, regval = rep(0,nrow(DATA)),binommode = 0)
-  }else{
-    model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = modeled_R, regval = rep(0,nrow(DATA)),binommode = 0)  
-  }
-  
+  model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = Rtrain, regval = rep(0,nrow(DATA)),binommode = 0)  
   pred.R.W = predict(model.R.W,newdata=data.matrix(data.frame(W)),type='response')
-  pred.R.W  = t(matrix(pred.R.W,nrow=3))
+  pred.R.W  = t(matrix(pred.R.W,nrow=length(Runique)))
   prob.R.W = rep(0,nrow(DATA))
   for (idx in 1:nrow(DATA)){
     prob.R.W[idx] = pred.R.W[idx,(R[idx]+1)]
@@ -59,18 +63,12 @@ WERMEstimator = function(OBS,mismode, seednum){
   
   regvallist = seq(0,10,by=0.2)
   SW_importance_sampling = prob.R/prob.R.W
-  lambda_W = learnHyperParam(regvallist,data.matrix(data.frame(W=W,R=R)),SW_importance_sampling,0)
+  lambda_W = learnHyperParam(regvallist = regvallist,
+                             invar = data.matrix(data.frame(W=W,R=R)),
+                             mylabel = SW_importance_sampling,
+                             learningbinary = 0, TFcontinuous = 1)
   learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),lambda_W)
-  
-  Iy = (Y == 1)*1
-  if (mismode == 1){
-    Iy.distorted = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
-    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
-    Iy = Iy.distorted
-  }else{
-    lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),Iy,1)
-  }
-  
+  lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),IyTrain,1)
   YxWERM = rep(0,length(Xunique))
   idx = 1 
   for (xval in Xunique){
@@ -83,7 +81,7 @@ WERMEstimator = function(OBS,mismode, seednum){
       rval_idx = rval_idx + 1 
     } 
     rfix = Runique[which.max(RProb)]
-    YxWERM[idx] = WERM_Heuristic(inVar_train=data.frame(X=X,R=R),inVar_eval=data.frame(X=rep(xval,nrow(OBS)),R=R),Y = Iy, Ybinary = 1, lambda_h = lambda_h, learned_W=learned_W,mismode,distortval) 
+    YxWERM[idx] = WERM_Heuristic(inVar_train=data.frame(X=X,R=R),inVar_eval=data.frame(X=rep(xval,nrow(OBS)),R=R),Y = IyTrain, Ybinary = 1, lambda_h = lambda_h, learned_W=learned_W,mismode,distortval) 
     idx = idx + 1 
   }
   return(YxWERM)

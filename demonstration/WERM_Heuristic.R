@@ -94,7 +94,7 @@ WERM_Sampler = function(DATA, myWeight){
 }
 
 
-learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
+learnHyperParam = function(regvallist,invar,mylabel,learningbinary, TFcontinuous){
   ############################
   # Objective
   # Learn the hyperparameter \lambda_W, \lambda_h
@@ -164,7 +164,11 @@ learnHyperParam = function(regvallist,invar,mylabel,learningbinary){
     }
     
     if (learningbinary == 0){ # If the output value is non-binary
-      model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(trainlabel)))
+      if (TFcontinuous == 0){
+        model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = numRounds,max.depth=maxDepth,lambda=regval,alpha=regval/2,objective="multi:softprob",eval_metric="mlogloss",num_class = length(unique(trainlabel)))  
+      }else{
+        model_XG = xgboost(verbose = 0, data = as.matrix(DATAtrain), label = trainlabel, nrounds = numRounds, max.depth=maxDepth,lambda=regval,alpha=regval/2)  
+      }
       predval = predict(model_XG,newdata=as.matrix(DATAtest))
       performancerecord[idx] = sum(abs(predval - testlabel))  
     }else{ # If the output value is binary

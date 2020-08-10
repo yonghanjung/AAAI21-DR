@@ -11,6 +11,18 @@ PlugInEstimator = function(OBS,mismode,seednum){
   Xunique = unique(X)[order(unique(X))]
   Yunique = unique(Y)[order(unique(Y))]
   
+  yvalfix = 1 
+  IyTrain = (Y == yvalfix)*1
+  Rtrain = R 
+  Xtrain = X 
+  if (mismode == 1){
+    IyTrain = distortVar(IyTrain,seednum)
+    Xtrain = distortVar(Xtrain,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
+  
   # Setting
   DATA = cbind(W,R,X,Y)
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
@@ -26,11 +38,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   
   # Compute P(Y=1 | w,r,x)
   ExpYParam_Real = function(myallpossible,DATA,yval){
-    Iy = (Y == yval)*1
-    if (mismode == 1){
-      Iy = xor((Iy * rbinom(n=length(Iy),size=1,prob=0.5)),rbinom(n=length(Iy),size=1,prob=0.5))*1
-    }
-    modelY = learnXG(as.matrix(DATA[,c('W','R','X')]),Iy,rep(0,length(Iy)),binommode = 1)
+    modelY = learnXG(as.matrix(DATA[,c('W','R','X')]), IyTrain, rep(0,length(IyTrain)),binommode = 1)
     evalMat = as.matrix(myallpossible[,c('W','R','X')])
     predval = predict(modelY,newdata=evalMat,type='response')
     newcol = (ncol(myallpossible)+1)
@@ -41,12 +49,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   
   # Compute P(x | w,r)
   ProbXParam_Real = function(myallpossible,DATA){
-    modeled_X = X 
-    if (mismode == 1){
-      modeled_X = 2*X 
-      modeled_X[modeled_X==4] = 1
-    }
-    modelX = learnXG(as.matrix(DATA[,c('W','R')]),modeled_X,rep(0,length(X)),binommode = 0)
+    modelX = learnXG(as.matrix(DATA[,c('W','R')]),Xtrain,rep(0,length(X)),binommode = 0)
     evalMat = as.matrix(myallpossible[,c('W','R')])
     predval = predict(modelX,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=3))
