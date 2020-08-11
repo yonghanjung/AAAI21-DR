@@ -32,9 +32,6 @@ NaiveEstimator = function(OBS){
           filtered_DATA = subset(DATA,W==wval & R==rval & X==xval)
           filtered_DATA_Y = subset(DATA,W==wval & R==rval & X==xval & Y==yval)
           prob_yval_wrx = nrow(filtered_DATA_Y)/nrow(filtered_DATA) 
-          if (mismode == 1){
-            prob_yval_wrx = fix_pred(mis_pred(prob_yval_wrx,distortval))
-          }
           myallpossible[myallpossible$W==wval & myallpossible$R==rval & myallpossible$X==xval,newcol] = prob_yval_wrx
         }
       }
@@ -53,9 +50,6 @@ NaiveEstimator = function(OBS){
           filtered_DATA = subset(DATA,W==wval & R==rval)
           filtered_DATA_X = subset(DATA,W==wval & R==rval & X==xval)
           prob_xval_wr = nrow(filtered_DATA_X)/nrow(filtered_DATA)
-          if (mismode == 1){
-            prob_xval_wr = fix_pred(mis_pred(prob_xval_wr,distortval))
-          }
           myallpossible[myallpossible$W==wval & myallpossible$R==rval & myallpossible$X==xval,newcol] = prob_xval_wr
         }
       }
@@ -95,9 +89,6 @@ NaiveEstimator = function(OBS){
   for (wval in Wunique){
     filtered_DATA_W = subset(DATA,W==wval)
     probval.W = nrow(filtered_DATA_W)/nrow(DATA)   
-    if (mismode == 1){
-      probval.W = fix_pred(mis_pred(probval.W,distortval))
-    }
     PwTable[PwTable$W == wval,'prob'] = probval.W
   }
   allpossibleOrig = allpossible

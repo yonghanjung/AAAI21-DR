@@ -208,7 +208,7 @@ learnWdash = function(Wdash1_importance,inVar,regval){
   return(Wdash1)
 }
 
-WERM_Heuristic = function(inVar_train,inVar_eval,Y, Ybinary, lambda_h,learned_W,mismode,distortval){
+WERM_Heuristic = function(inVar_train,inVar_eval,Y, Ybinary, lambda_h,learned_W){
   xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Y)
   if (Ybinary == 0){
     modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=lambda_h,alpha=lambda_h,weight = learned_W)
@@ -217,9 +217,6 @@ WERM_Heuristic = function(inVar_train,inVar_eval,Y, Ybinary, lambda_h,learned_W,
   }
   modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=lambda_h,alpha=lambda_h,objective = "binary:logistic",weight = learned_W)
   predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
-  if (mismode == 1){
-    predY = fix_pred(mis_pred(predY,distortval))
-  }
   Yx = mean(predY)
   return(Yx)
 }

@@ -16,34 +16,30 @@ library(mise)
 library(tictoc)
 
 # Log Example
-## Rscript simulator.R 'napkin' 20 2 30 20 1 20 5 50 'napkin_0730_2300_D20'
-## nohup taskset -c 0-29 Rscript simulator.R 'napkin' 20 2 100 20 1 20 25 50 'napkin-0801-0140-D20' >log-napkin-0801-0140-D20.txt & 
+## nohup taskset -c 0-20 Rscript simulation.R 'napkin' 100 500 20 20 0 >log-napkin-0810-1300.txt & 
 
 args = commandArgs(trailingOnly = TRUE)
 cores = detectCores()
-timeoutLim = 100
+timeoutLim = 999999
 
-# probleminstance = args[1]
-# D = as.numeric(args[2])
-# numCate = as.numeric(args[3])
-# simRound = as.numeric(args[4])
-# totalN = as.numeric(args[5])
-# nidx.start = as.numeric(args[6])
-# nidx.end = as.numeric(args[7])
-# corenum = as.numeric(args[8])
-# NumUnit = as.numeric(args[9])
-# filetitle = args[10]
-
-# Example
-probleminstance = 'napkin'
-simRound = 2
-NumUnit = 500
-totalNumUnit = 2
+probleminstance = args[1]
+simRound = as.numeric(args[2]) # 100
+NumUnit = as.numeric(args[3]) # 500
+totalNumUnit = as.numeric(args[4]) # 20
+numCores = as.numeric(args[5]) # 15
+mismode = as.numeric(args[6])
 nidx.start = 1
 nidx.end = totalNumUnit
-numCores = 4
 
-filetitle = paste(probleminstance,'-0801-0222',sep="")
+# Example
+# probleminstance = 'napkin'
+# simRound = 2
+# NumUnit = 500
+# totalNumUnit = 2
+# numCores = 4
+# mismode = 0
+# nidx.start = 1
+# nidx.end = totalNumUnit
 
 if(probleminstance == 'napkin'){
   source('napkin-real-data.R')
@@ -52,6 +48,9 @@ if(probleminstance == 'napkin'){
   source('napkin-real-WERM.R')
   source('napkin-real-plugin.R')
 }
+
+probleminstance = paste(probleminstance,"mismode",mismode,sep="-")
+filetitle = paste(probleminstance,'-0810-1300',sep="")
 
 timeoutFun = function(Fun, mytime){
   result = withTimeout({
@@ -81,7 +80,7 @@ returnSummary = function(myArray){
 
 print(probleminstance)
 # cl = makeSOCKcluster(numCores,outfile='Result/log-parallel.txt')
-registerDoParallel(numCore)  # use multicore, set to the number of our cores
+# registerDoParallel(numCores)  # use multicore, set to the number of our cores
 Nlist = c(1:totalNumUnit)*NumUnit
 
 mat.summary.ANSWER = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
@@ -94,8 +93,7 @@ mat.total.PlugIn = matrix(0,nrow=totalNumUnit,ncol=simRound)
 mat.total.WERM = matrix(0,nrow=totalNumUnit,ncol=simRound)
 mat.total.DR = matrix(0,nrow=totalNumUnit,ncol=simRound)
 
-Nmax = 5000
-mismode = 0
+Nmax = 1000
 
 for (nidx in nidx.start:nidx.end){
   N = Nlist[nidx]
@@ -106,7 +104,7 @@ for (nidx in nidx.start:nidx.end){
   # opts <- list(progress = progress)
   
   val.total = foreach(idx= 1:simRound, .combine = 'rbind', 
-                      .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc')) %dopar% {
+                      .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc','bnlearn')) %do% {
                         
                         seednum = sample(1:10000000,1)
                         tmp = dataGen(seednum,N,Nmax)
@@ -124,6 +122,7 @@ for (nidx in nidx.start:nidx.end){
                         performance_DR = mean(abs(answer-DRanswer), na.rm = T)
                         performance_WERM = mean(abs(answer-WERManswer), na.rm = T)
                         
+                        system(paste("echo 'Progressing:",idx,"'"))
                         return(c(performance_PI, performance_DR, performance_WERM))
                       }
   
@@ -162,7 +161,7 @@ write.csv(mat.total.DR,paste("Result/",filetitle,"-DR.csv",sep=""))
 write.csv(mat.total.PlugIn,paste("Result/",filetitle,"-PlugIn.csv",sep=""))
 write.csv(mat.total.WERM,paste("Result/",filetitle,"-WERM.csv",sep=""))
 
-stopCluster(cl)  
+# stopCluster(cl)  
 
 
 

@@ -13,10 +13,62 @@ returnUnique = function(OBS){
   return(list(Wunique,Runique,Xunique,Yunique))
 }
 
+nonRandomSampleSplit = function(OBS,mysize){
+  OBSuniqueList = returnUnique(OBS)
+  # Enumerate all possible values of column
+  tmp = c()
+  for (idx in 1:length(OBSuniqueList)){
+    tmp = append(tmp,list(OBSuniqueList[[idx]]))
+  }
+  allpossible = expand.grid(tmp)
+  colnames(allpossible) = colnames(OBS)
+  mycollect = c()
+  for (rowidx in 1:nrow(allpossible)){
+    filtered_OBS = subset(OBS, W == allpossible[rowidx,'W'] & R == allpossible[rowidx,'R'] & X == allpossible[rowidx,'X'] & Y == allpossible[rowidx,'Y'] )
+    if (nrow(filtered_OBS) > 0){
+      mycollect = rbind(mycollect,filtered_OBS[1,]) 
+    }
+  }
+  if (nrow(mycollect) < mysize){
+    for (rowidx in 1:nrow(OBS)){
+      if (rowidx %in% as.numeric(rownames(mycollect)) == FALSE){
+        mycollect = rbind(mycollect,OBS[rowidx,])  
+      }
+      if (nrow(mycollect) == mysize){
+        break 
+      }
+    }
+  }
+  
+  totalidx = c(1:nrow(OBS))
+  mycollect2 = setdiff(totalidx,as.numeric(rownames(mycollect)))
+  OBS_2 = OBS[mycollect2,]
+  OBS_2_unique = returnUnique(OBS_2)
+  OBS_1_unique = returnUnique(OBS_1)
+  if (identical( OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] ) == FALSE){
+    while(1){
+      splitidx = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
+      OBS_2 = OBS[splitidx,]
+      if (identical(OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] )){
+        break
+      }
+    }  
+  }
+  OBS_1 = mycollect
+  rownames(OBS_1) = c(1:nrow(OBS_1))
+  rownames(OBS_2) = c(1:nrow(OBS_2))
+  return(list(OBS_1,OBS_2))
+}
+
 GoodSplit = function(OBS){
   totalidx = c(1:nrow(OBS))
   
+  iteridx = 0
+  iterMax = 10
+  
   while(1){
+    iteridx = iteridx + 1 
+    
     splitidx_1 = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
     splitidx_2 = setdiff(totalidx,splitidx_1)
     OBS_1 = OBS[splitidx_1,]
@@ -25,13 +77,19 @@ GoodSplit = function(OBS){
     Unique_1 = returnUnique(OBS_1)
     Unique_2 = returnUnique(OBS_2)
     stopSwitch = TRUE 
-    for (idx in 1:4){
-      if (identical(Unique_1,Unique_2) == FALSE){
-        stopSwitch = FALSE 
-      }
+    if (identical(Unique_1[[length(Unique_1)]],Unique_2[[length(Unique_2)]]) == FALSE){
+      stopSwitch = FALSE 
     }
+    # for (idx in 1:4){
+    #   
+    # }
     if (stopSwitch == TRUE){
       break
+    }
+    if (iteridx > iterMax){
+      mytmp = nonRandomSampleSplit(OBS,mysize=nrow(OBS)/2)
+      OBS_1 = mytmp[[1]]
+      OBS_2 = mytmp[[2]]
     }
   }
   rownames(OBS_1) = c(1:nrow(OBS_1))
@@ -179,9 +237,13 @@ DREstimator = function(OBS,mismode,seednum){
   for (xfix in Xunique){
     trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
     trainedlist2 = TrainModel(DATA_Eval, DATA_Train , DATA, xfix, yfix, mismode)
+    # trainedlist3 = TrainModel(DATA, DATA , DATA, xfix, yfix, mismode)
     YxDR[idx] = mean(Compute_Yx(DATA_Train, DATA_Eval, trainedlist1, yfix, xfix),
-                     Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix), 
+                     Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix),
                      na.rm=T)
+    # YxDR[idx] = mean(Compute_Yx(DATA, DATA, trainedlist3, yfix, xfix),
+    #                  Compute_Yx(DATA, DATA , trainedlist3, yfix, xfix), 
+    #                  na.rm=T)
     YxDR[idx] = max(YxDR[idx],0)
     YxDR[idx] = min(YxDR[idx],1)
     idx = idx + 1 

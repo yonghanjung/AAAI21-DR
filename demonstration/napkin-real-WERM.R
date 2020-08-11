@@ -67,8 +67,10 @@ WERMEstimator = function(OBS,mismode, seednum){
                              invar = data.matrix(data.frame(W=W,R=R)),
                              mylabel = SW_importance_sampling,
                              learningbinary = 0, TFcontinuous = 1)
-  learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),lambda_W)
-  lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),IyTrain,1)
+  # learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),lambda_W)
+  learned_W = rep(0,nrow(OBS))
+  lambda_h = rep(0,nrow(OBS))
+  # lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),IyTrain,1)
   YxWERM = rep(0,length(Xunique))
   idx = 1 
   for (xval in Xunique){
@@ -81,7 +83,7 @@ WERMEstimator = function(OBS,mismode, seednum){
       rval_idx = rval_idx + 1 
     } 
     rfix = Runique[which.max(RProb)]
-    YxWERM[idx] = WERM_Heuristic(inVar_train=data.frame(X=X,R=R),inVar_eval=data.frame(X=rep(xval,nrow(OBS)),R=R),Y = IyTrain, Ybinary = 1, lambda_h = lambda_h, learned_W=learned_W,mismode,distortval) 
+    YxWERM[idx] = WERM_Heuristic(inVar_train=data.frame(X=X,R=R),inVar_eval=data.frame(X=rep(xval,nrow(OBS)),R=R),Y = IyTrain, Ybinary = 1, lambda_h = lambda_h, learned_W=learned_W) 
     idx = idx + 1 
   }
   return(YxWERM)

@@ -96,9 +96,6 @@ PlugInEstimator = function(OBS,mismode,seednum){
   for (wval in Wunique){
     filtered_DATA_W = subset(DATA,W==wval)
     probval.W = nrow(filtered_DATA_W)/nrow(DATA)   
-    if (mismode == 1){
-      probval.W = fix_pred(mis_pred(probval.W,distortval))
-    }
     PwTable[PwTable$W == wval,'prob'] = probval.W
   }
   allpossibleOrig = allpossible
