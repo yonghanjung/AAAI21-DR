@@ -28,6 +28,7 @@ NumUnit = as.numeric(args[3]) # 500
 totalNumUnit = as.numeric(args[4]) # 20
 numCores = as.numeric(args[5]) # 15
 mismode = as.numeric(args[6])
+filedate = args[7]
 nidx.start = 1
 nidx.end = totalNumUnit
 
@@ -114,9 +115,10 @@ for (nidx in nidx.start:nidx.end){
                         # answer2 = DRNaiveEstimator(OBS.Large)
                         answer = answer1 
                         
-                        PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, seednum, mismode, timeoutLim)
-                        DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, seednum, mismode, timeoutLim)
-                        WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, seednum, mismode, timeoutLim)
+                        
+                        PIanswer = RunFunWithTime(TimeFUN = timeoutFun, EstFUN = PlugInEstimator, OBS = OBS, mismode = mismode, seednum = seednum, timelim = timeoutLim)
+                        DRanswer = RunFunWithTime(TimeFUN = timeoutFun, EstFUN = DREstimator, OBS = OBS, mismode = mismode, seednum = seednum, timelim = timeoutLim)
+                        WERManswer = RunFunWithTime(TimeFUN = timeoutFun, EstFUN = WERMEstimator, OBS = OBS, mismode = mismode, seednum = seednum, timelim = timeoutLim)
                         
                         performance_PI = mean(abs(answer-PIanswer), na.rm = T)
                         performance_DR = mean(abs(answer-DRanswer), na.rm = T)

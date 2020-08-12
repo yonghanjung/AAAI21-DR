@@ -69,8 +69,9 @@ ConstructDFPlot = function(instancename,mean_median){
 }
 
 
-# instancename = 'Result/napkin-mismode-0-0810-1300'
-instancename = 'Result/napkin-mismode-1-0811-1500'
+instancename = 'Result/napkin-mismode-0-0810-1300'
+# instancename = 'Result/napkin-mismode-1-0811-1800'
+# instancename = 'Result/napkin-mismode-2-0811-2030'
 df.result = ConstructDFPlot(instancename,'mean')
 
 

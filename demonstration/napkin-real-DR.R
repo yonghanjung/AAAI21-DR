@@ -210,6 +210,21 @@ DREstimator = function(OBS,mismode,seednum){
     return(mean(UIF,na.rm=T))
   }
   
+  ConductDoubleML = function(numIter,DATA,xfix,yfix,mismode){
+    YxList = rep(0,numIter)
+    for (iteridx in 1:numIter){
+      tmp = GoodSplit(DATA)
+      DATA_Train = tmp[[1]]
+      DATA_Eval = tmp[[2]]
+      trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
+      trainedlist2 = TrainModel(DATA_Eval, DATA_Train, DATA, xfix, yfix, mismode)
+      Yxval = mean(Compute_Yx(DATA_Train, DATA_Eval, trainedlist1, yfix, xfix),
+                   Compute_Yx(DATA_Eval,DATA_Train, trainedlist2, yfix, xfix),na.rm=T)
+      YxList[iteridx] = Yxval
+    }
+    return(mean(YxList,na.rm=T))
+  }
+  
   ####################################################
   # Main 
   ####################################################
@@ -227,20 +242,21 @@ DREstimator = function(OBS,mismode,seednum){
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
   Ndata = nrow(DATA)
   
-  tmp = GoodSplit(DATA)
-  DATA_Train = tmp[[1]]
-  DATA_Eval = tmp[[2]]
+  # tmp = GoodSplit(DATA)
+  # DATA_Train = tmp[[1]]
+  # DATA_Eval = tmp[[2]]
   
   yfix = 1 
   YxDR = rep(0,length(Xunique))
   idx = 1 
   for (xfix in Xunique){
-    trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
-    trainedlist2 = TrainModel(DATA_Eval, DATA_Train , DATA, xfix, yfix, mismode)
+    YxDR[idx] = ConductDoubleML(numIter=3,DATA=DATA,xfix=xfix,yfix=yfix,mismode=mismode)
+    # trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
+    # trainedlist2 = TrainModel(DATA_Eval, DATA_Train , DATA, xfix, yfix, mismode)
     # trainedlist3 = TrainModel(DATA, DATA , DATA, xfix, yfix, mismode)
-    YxDR[idx] = mean(Compute_Yx(DATA_Train, DATA_Eval, trainedlist1, yfix, xfix),
-                     Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix),
-                     na.rm=T)
+    # YxDR[idx] = mean(Compute_Yx(DATA_Train, DATA_Eval, trainedlist1, yfix, xfix),
+    #                  Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix),
+    #                  na.rm=T)
     # YxDR[idx] = mean(Compute_Yx(DATA, DATA, trainedlist3, yfix, xfix),
     #                  Compute_Yx(DATA, DATA , trainedlist3, yfix, xfix), 
     #                  na.rm=T)

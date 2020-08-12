@@ -2,43 +2,8 @@ library(reshape)
 library(ggplot2)
 mise()
 ylimits = c(0,0.4)
-# probleminstance = "verma"
-# probleminstance = "genfd"
-# probleminstance = "fd"
 probleminstance = 'napkin'
-# probleminstance = 'planid'
 
-# simResult = read.csv("verma-0112-2002-99-500-5-3.csv")
-# simResult = read.csv("FD-0111-0155-15-500-5-2.csv")
-# simResult = read.csv("FD-0116-0050-15-500-5-2.csv")
-# simResult = read.csv("genFD-0116-0050-12-500-5-2.csv")
-# simResult = read.csv("genFD-0110-2243-15-500-5-2.csv")
-# simResult = read.csv('tmp_FD_0126_1033.csv')
-# simResult = read.csv('tmp_verma_0126_1307.csv')
-# simResult = read.csv('tmp_verma_0126_1307_035.csv')
-# simResult = read.csv('tmp_genFD_0202_1109.csv')
-# simResult = read.csv('tmp_FD_0202_1352.csv')
-# simResult = read.csv('tmp_genFD_0203_0214.csv')
-# simResult = read.csv('tmp_verma_0203_0216.csv')
-# simResult = read.csv('tmp_genFD_0203_0219.csv')
-
-# simResult = read.csv('tmp_newverma_0205_500_1211_010_030.csv')
-
-# simResult = read.csv("tmp_newverma_0207_100_0522_020_035")
-
-# simResult = read.csv("tmp_newverma_0207_500_0522_020_035.csv")
-
-# simResult = read.csv("verma_0207_0544_500_020_035.csv")
-
-# simResult = read.csv('fd1d-0216-1531-500-020-030.csv')
-
-# simResult = read.csv('tmp_napkin_0323_1615_100_010_030.csv')
-# simResult = read.csv('planid-0705-1050-100-010-030.csv')
-# simResult = read.csv('napkin-0714-1626-100-03-03.csv')
-# simResult = read.csv('tmp_planid.csv')
-# simResult = read.csv('napkin-0718-2100-100-025-025.csv')
-# simResult = read.csv('napkin-0718-2100-100-010-030.csv')
-simResult = read.csv('napkin-0720-1200-100-025-025.csv')
 
 
 simResult$X = c(1:nrow(simResult))

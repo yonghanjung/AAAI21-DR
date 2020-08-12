@@ -9,10 +9,10 @@ source('napkin-real-WERM.R')
 source('napkin-real-DR-naive.R')
 source('napkin-real-asBD.R')
 
-mismode = 1
+mismode = 2
 
 seednum = sample(1:10000000,1)
-N = 10000; Nmax = 1000
+N = 1000; Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
 OBS.Large = tmp[[1]]
 OBS = tmp[[2]]

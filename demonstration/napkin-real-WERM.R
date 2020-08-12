@@ -57,7 +57,7 @@ WERMEstimator = function(OBS,mismode, seednum){
   }
   
   prob.R = mapply(function(rval){
-    jointprob.R = sum(allpossible[allpossible$R==rval,'prob'])
+    jointprob.R = sum((Rtrain == rval)*1)/nrow(DATA)
     return(jointprob.R)
   },DATA$R)
   
