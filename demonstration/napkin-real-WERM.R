@@ -1,6 +1,5 @@
-
+source('RID_functions.R')
 source('WERM_Heuristic.R')
-
 
 WERMEstimator = function(OBS,mismode, seednum){
   W = OBS[,1] # High dim surrogate

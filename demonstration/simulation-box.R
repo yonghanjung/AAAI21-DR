@@ -70,6 +70,32 @@ returnSummary = function(myArray){
   mean.Array = mean(myArray,na.rm = T)
   return(c(as.numeric(qt.Array),mean.Array))
 }
+
+computePerformance_PlanID = function(OBS,answer,prediction){
+  X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
+  X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
+  idx = 1 
+  proportion_X = rep(0,length(X1unique)*length(X2unique))
+  for (x1val in X1unique){
+    for (x2val in X2unique){
+      proportion_X[idx] = nrow(subset(OBS,X1==x1val & X2==x2val))/nrow(OBS)
+      idx = idx + 1 
+    }
+  }
+  return(sum(abs(answer-prediction)*proportion_X,na.rm=T))
+}
+
+computePerformance_Napkin = function(OBS,answer,prediction){
+  Xunique = unique(OBS$X)[order(unique(OBS$X))]
+  idx = 1 
+  proportion_X = rep(0,length(Xunique))
+  for (xval in Xunique){
+    proportion_X[idx] = nrow(subset(OBS,X==xval))/nrow(OBS)
+    idx = idx + 1 
+  }
+  return(sum(abs(answer-prediction)*proportion_X,na.rm=T))
+}
+
 print(probleminstance)
 
 Nmax = 1000
@@ -92,13 +118,19 @@ simResult = foreach(idx= 1:simRound, .combine = 'rbind',
                         DRanswer = RunFunWithTime(TimeFUN = timeoutFun, EstFUN = DREstimator, OBS = OBS, mismode = mismode, seednum = seednum, timelim = timeoutLim)
                         WERManswer = RunFunWithTime(TimeFUN = timeoutFun, EstFUN = WERMEstimator, OBS = OBS, mismode = mismode, seednum = seednum, timelim = timeoutLim)
                         
-                        performance_PI = mean(abs(answer-PIanswer), na.rm = T)
-                        performance_DR = mean(abs(answer-DRanswer), na.rm = T)
-                        performance_WERM = mean(abs(answer-WERManswer), na.rm = T)
+                        if (probleminstance == 'napkin'){
+                          computePerformance = computePerformance_Napkin
+                        }
+                        if (probleminstance == 'planid'){
+                          computePerformance = computePerformance_PlanID
+                        }
+                        performance_PI = computePerformance(OBS.Large,answer,PIanswer)
+                        performance_DR = computePerformance(OBS.Large,answer,DRanswer)
+                        performance_WERM = computePerformance(OBS.Large,answer,WERManswer)
                         
-                        performancePlugIn[mismode+1] = PIanswer
-                        performanceDR[mismode+1] = DRanswer
-                        performanceWERM[mismode+1] = WERManswer
+                        performancePlugIn[mismode+1] = performance_PI
+                        performanceDR[mismode+1] = performance_DR
+                        performanceWERM[mismode+1] = performance_WERM
                       }
                       return(c(0,performancePlugIn,performanceDR,performanceWERM))  
                     }

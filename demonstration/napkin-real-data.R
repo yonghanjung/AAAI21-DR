@@ -74,9 +74,9 @@ dataGen = function(seednum,N,Nmax){
   DATA = data.matrix(alarm) - 1 
   DATA = data.frame(DATA[,c('STKV','CCHL','HR','CO','BP','TPR','ANES')])
   
-  # Prob.Snode.A_K = matrix(runif(length(unique(DATA$ANES)) * length(unique(DATA$STKV)),min=0,max=1)
-  #                           ,nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)) )
-  Prob.Snode.A_K = matrix(c(0.85,0.75,0.8,0.65,0.65,0.7),nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)))
+  Prob.Snode.A_K = matrix(runif(length(unique(DATA$ANES)) * length(unique(DATA$STKV)),min=0.5,max=1)
+                            ,nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)) )
+  # Prob.Snode.A_K = matrix(c(0.85,0.75,0.8,0.65,0.65,0.7),nrow = length(unique(DATA$ANES)),ncol = length(unique(DATA$STKV)))
   
   mytheta = mapply(function(anesval,stkvval){
     rowidx_Pi = anesval+1 
@@ -106,13 +106,13 @@ dataGen = function(seednum,N,Nmax){
   
   # Making Napkin
   colnames(sampled_df) = c("K","W","R","X",'Y',"TPR","A","taking_idx")
-  # OBS.Large = sampled_df[,c("W","R","X","Y")]
-  OBS = sampled_df[,c("W","R","X","Y")]
-  # if (N >= nrow(OBS.Large)){
-  #   N = nrow(OBS.Large)
-  # }
-  return(OBS)
-  # OBS = goodSample(OBS.Large,N)
-  # return(list(OBS.Large,OBS))
+  OBS.Large = sampled_df[,c("W","R","X","Y")]
+  # OBS = sampled_df[,c("W","R","X","Y")]
+  if (N >= nrow(OBS.Large)){
+    N = nrow(OBS.Large)
+  }
+  # return(OBS)
+  OBS = goodSample(OBS.Large,N)
+  return(list(OBS.Large,OBS))
 }
 

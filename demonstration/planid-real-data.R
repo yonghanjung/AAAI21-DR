@@ -68,7 +68,7 @@ dataSampling_S = function(Val1, Val2, Prob.S, myDATA, covariate_to_keep){
   return(selected_DATA)
 }
 
-dataGen = function(seednum,N,Nmax){
+dataGen = function(seednum){
   data(alarm)
   set.seed(seednum)
   DATA = data.matrix(alarm) - 1
@@ -96,41 +96,50 @@ dataGen = function(seednum,N,Nmax){
   # Prob.S = matrix(runif(length(unique(Val1)) * length(unique(Val2)),min=0.5,max=1)
   #                           ,nrow = length(unique(Val1)),ncol = length(unique(Val2)) )
   
-  # Prob.S.PMB.VMCH = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
-  Prob.S.PMB.VMCH = matrix(c(0.75,0.85,0.6,0.82,0.76,0.53,0.7,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
+  Prob.S.PMB.VMCH = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
+  # Prob.S.PMB.VMCH = matrix(c(0.75,0.85,0.6,0.82,0.76,0.53,0.7,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   
-  # Prob.S.VMCH.SHNT = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
-  Prob.S.VMCH.SHNT = matrix(c(0.85,0.54,0.8,0.65,0.76,0.53,0.82,0.85),nrow = length(unique(DATA$VMCH)),ncol = length(unique(DATA$SHNT)) )
+  Prob.S.SHNT.VMCH = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$VMCH)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
+  # Prob.S.VMCH.SHNT = matrix(c(0.85,0.54,0.8,0.65,0.76,0.53,0.82,0.85),nrow = length(unique(DATA$VMCH)),ncol = length(unique(DATA$SHNT)) )
   
-  # Prob.S.SHNT.KINK = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$KINK)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$KINK)) )
-  Prob.S.SHNT.KINK = matrix(c(0.75,0.85,0.75,0.85),nrow = length(unique(DATA$SHNT)), ncol = length(unique(DATA$KINK)) )
+  Prob.S.SHNT.KINK = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$KINK)),min=0.5,max=1),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$KINK)) )
+  # Prob.S.SHNT.KINK = matrix(c(0.75,0.85,0.75,0.85),nrow = length(unique(DATA$SHNT)), ncol = length(unique(DATA$KINK)) )
   
-  # Prob.S.PMB.TPR = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$TPR)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
-  Prob.S.PMB.TPR = matrix(c(0.87,0.75,0.85,0.75,0.7,0.6),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
+  Prob.S.PMB.TPR = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$TPR)),min=0.5,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
+  # Prob.S.PMB.TPR = matrix(c(0.87,0.75,0.85,0.75,0.7,0.6),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$TPR)) )
   
-  # Prob.S.DISC.ANES = matrix(runif(length(unique(DATA$DISC)) * length(unique(DATA$ANES)),min=0.5,max=1),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
-  Prob.S.DISC.ANES = matrix(c(0.89,0.85,0.75,0.5),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
+  Prob.S.DISC.ANES = matrix(runif(length(unique(DATA$DISC)) * length(unique(DATA$ANES)),min=0.5,max=1),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
+  # Prob.S.DISC.ANES = matrix(c(0.89,0.85,0.75,0.5),nrow = length(unique(DATA$DISC)),ncol = length(unique(DATA$ANES)) )
   
-  while(1){
-    DATA_sampled = dataSampling_S(Val1 = DATA$PMB, Val2 = DATA$VMCH, Prob.S.PMB.VMCH,DATA, covariate_to_keep) # S1
-    DATA_sampled = dataSampling_S(Val1 = DATA_sampled$VMCH, Val2 = DATA_sampled$SHNT, Prob.S.VMCH.SHNT, DATA_sampled, covariate_to_keep) # S2
-    DATA_sampled = dataSampling_S(Val1 = DATA_sampled$SHNT, Val2 = DATA_sampled$KINK, Prob.S.SHNT.KINK, DATA_sampled, covariate_to_keep) # S3
-    DATA_sampled = dataSampling_S(Val1 = DATA_sampled$PMB, Val2 = DATA_sampled$TPR, Prob.S.PMB.TPR, DATA_sampled, covariate_to_keep) # S4
-    DATA_sampled = dataSampling_S(Val1 = DATA_sampled$DISC, Val2 = DATA_sampled$ANES, Prob.S.DISC.ANES, DATA_sampled, covariate_to_keep) # S5
-    if (nrow(DATA_sampled) > Nmax){
-      break 
-    }
-  }
+  DATA_sampled = dataSampling_S(Val1 = DATA$PMB, Val2 = DATA$VMCH, Prob.S.PMB.VMCH, DATA, covariate_to_keep) # S1
+  DATA_sampled = dataSampling_S(Val1 = DATA_sampled$SHNT, Val2 = DATA_sampled$VMCH, Prob.S.SHNT.VMCH, DATA_sampled, covariate_to_keep) # S2
+  DATA_sampled = dataSampling_S(Val1 = DATA_sampled$SHNT, Val2 = DATA_sampled$KINK, Prob.S.SHNT.KINK, DATA_sampled, covariate_to_keep) # S3
+  DATA_sampled = dataSampling_S(Val1 = DATA_sampled$PMB, Val2 = DATA_sampled$TPR, Prob.S.PMB.TPR, DATA_sampled, covariate_to_keep) # S4
+  DATA_sampled = dataSampling_S(Val1 = DATA_sampled$DISC, Val2 = DATA_sampled$ANES, Prob.S.DISC.ANES, DATA_sampled, covariate_to_keep) # S5
   
-  # Hiding variables 
-  OBS.Large = DATA[,covariate_to_keep]
-  colnames(OBS.Large) = c("X1","Z","R","X2","Y")
-  if (N >= nrow(OBS.Large)){
-    N = nrow(OBS.Large)
-  }
-  OBS = goodSample(OBS.Large,N)
+  # while(1){
+  #   DATA_sampled = dataSampling_S(Val1 = DATA$PMB, Val2 = DATA$VMCH, Prob.S.PMB.VMCH,DATA, covariate_to_keep) # S1
+  #   DATA_sampled = dataSampling_S(Val1 = DATA_sampled$VMCH, Val2 = DATA_sampled$SHNT, Prob.S.VMCH.SHNT, DATA_sampled, covariate_to_keep) # S2
+  #   DATA_sampled = dataSampling_S(Val1 = DATA_sampled$SHNT, Val2 = DATA_sampled$KINK, Prob.S.SHNT.KINK, DATA_sampled, covariate_to_keep) # S3
+  #   DATA_sampled = dataSampling_S(Val1 = DATA_sampled$PMB, Val2 = DATA_sampled$TPR, Prob.S.PMB.TPR, DATA_sampled, covariate_to_keep) # S4
+  #   DATA_sampled = dataSampling_S(Val1 = DATA_sampled$DISC, Val2 = DATA_sampled$ANES, Prob.S.DISC.ANES, DATA_sampled, covariate_to_keep) # S5
+  #   if (nrow(DATA_sampled) > Nmax){
+  #     break 
+  #   }
+  # }
   
-  return(list(OBS.Large,OBS))
+  # Hiding variables
+  OBS = DATA_sampled[,covariate_to_keep]
+  colnames(OBS) = c("X1","Z","R","X2","Y")
+  return(OBS)
+  # OBS.Large = DATA[,covariate_to_keep]
+  # colnames(OBS.Large) = c("X1","Z","R","X2","Y")
+  # if (N >= nrow(OBS.Large)){
+  #   N = nrow(OBS.Large)
+  # }
+  # OBS = goodSample(OBS.Large,N)
+  
+  # return(list(OBS.Large,OBS))
 }
 
 

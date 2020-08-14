@@ -250,7 +250,7 @@ DREstimator = function(OBS,mismode,seednum){
   YxDR = rep(0,length(Xunique))
   idx = 1 
   for (xfix in Xunique){
-    YxDR[idx] = ConductDoubleML(numIter=3,DATA=DATA,xfix=xfix,yfix=yfix,mismode=mismode)
+    YxDR[idx] = ConductDoubleML(numIter=1,DATA=DATA,xfix=xfix,yfix=yfix,mismode=mismode)
     # trainedlist1 = TrainModel(DATA_Train, DATA_Eval, DATA, xfix, yfix, mismode)
     # trainedlist2 = TrainModel(DATA_Eval, DATA_Train , DATA, xfix, yfix, mismode)
     # trainedlist3 = TrainModel(DATA, DATA , DATA, xfix, yfix, mismode)

@@ -1,50 +1,45 @@
+library(mise)
 library(reshape)
 library(ggplot2)
 mise()
-ylimits = c(0,0.4)
-probleminstance = 'napkin'
+ylimits = c(0,0.5)
+
+df.result = read.csv('Result/napkin-box-0812-0230.csv')
+df.result$X = c(1:nrow(df.result))
+colnames(df.result)[1] = "simIdx"
+myN = nrow(df.result)
+
+AAE = c(df.result$PI.Mis0,df.result$PI.Mis1,df.result$PI.Mis2,
+        df.result$WERM.Mis0,df.result$WERM.Mis1,df.result$WERM.Mis2,
+        df.result$DR.Mis0,df.result$DR.Mis1,df.result$DR.Mis2)
+Means = c(mean(df.result$PI.Mis0), mean(df.result$PI.Mis1), mean(df.result$PI.Mis2),
+          mean(df.result$WERM.Mis0), mean(df.result$WERM.Mis1), mean(df.result$WERM.Mis2),
+          mean(df.result$DR.Mis0), mean(df.result$DR.Mis1), mean(df.result$DR.Mis2))
+SDs = c(sd(df.result$PI.Mis0), sd(df.result$PI.Mis1), sd(df.result$PI.Mis2),
+        sd(df.result$WERM.Mis0), sd(df.result$WERM.Mis1), sd(df.result$WERM.Mis2),
+        sd(df.result$DR.Mis0), sd(df.result$DR.Mis1), sd(df.result$DR.Mis2))
+label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
+          rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
+          rep("DR",myN),rep("DR",myN),rep("DR",myN))
+Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+         rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+         rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
+plotData = data.frame(AAE,Means,SDs,label,Type)
+plotData$label = factor(plotData$label,c("PI","WERM","DR"))
+plotData$mycolor = c(rep("red",3*myN),rep("green",3*myN),rep("blue",3*myN))
 
 
-
-simResult$X = c(1:nrow(simResult))
-colnames(simResult)[1] = "simIdx"
-myN = length(simResult$PI.Mis0)
-
-if (probleminstance == 'fd' || probleminstance == 'genfd' || probleminstance == 'napkin' || probleminstance == 'planid'){
-  AAE = c(simResult$PI.Mis0,simResult$PI.Mis1,simResult$PI.Mis2,
-         simResult$WERM.Mis0,simResult$WERM.Mis1,simResult$WERM.Mis2,
-       simResult$DR.Mis0,simResult$DR.Mis1,simResult$DR.Mis2)
-  label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
-            rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
-            rep("DR",myN),rep("DR",myN),rep("DR",myN))
-  Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
-           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
-           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
-  plotData = data.frame(AAE,label,Type)
-  plotData$label = factor(plotData$label,c("PI","WERM","DR"))
-  plotData$mycolor = c(rep("red",3*myN),rep("green",3*myN),rep("blue",3*myN))
-}else{
-  AAE = c(simResult$param.Mis0,simResult$param.Mis1,simResult$param.Mis2,
-    simResult$dl.Mis0,simResult$dl.Mis1,simResult$dl.Mis2)
-  label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
-            rep("DR",myN),rep("DR",myN),rep("DR",myN))
-  Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
-           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
-  plotData = data.frame(AAE,label,Type)
-  plotData$label = factor(plotData$label,c("PI","DR"))
-}
 
 # plotData$AE = factor(plotData$AE)
 # plotData$label = factor(plotData$label)
 # plotData$Type = factor(plotData$Type)
 
-gg = ggplot(plotData,aes(x=Type,y=AAE,fill=label))
-gg = gg + geom_boxplot()
-if (probleminstance == 'fd' || probleminstance == 'genfd' || probleminstance == 'napkin' || probleminstance == 'planid'){
-  gg = gg + scale_fill_manual(values=c("#FF6666","#FFFF66","#3399FF"))
-}else{
-  gg = gg + scale_fill_manual(values=c("#FF6666","#3399FF"))
-}
+gg = ggplot(plotData,aes(x=Type, y=AAE))
+gg = gg + geom_boxplot(aes(fill=label))
+# gg = gg + stat_summary(fun=mean, geom="point", aes(group=label), position=position_dodge(.9), color="red", size=3)
+# gg = gg + geom_errorbar(aes(x=Type,ymax = Means + SDs, ymin = Means - SDs),position = "dodge")
+gg = gg + scale_fill_manual(values=c("#FF6666","#FFFF66","#3399FF"))
+
 gg = gg + coord_cartesian(ylim=ylimits)
 # gg = gg + geom_hline(yintercept=0,color='coral',size=1)
 gg = gg + theme_bw()

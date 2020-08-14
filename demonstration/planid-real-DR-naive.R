@@ -88,6 +88,8 @@ DRNaiveEstimator = function(OBS,mismode){
   yvalfix = yval
   Iy = (Y==yval)*1
   
+  distortval = 0.5
+  
   compute_UIF_M1_Naive = function(DATA,allpossible,yval,rvalfix,x2valfix){
     # X1 = DATA[,1] 
     # Z = DATA[,2] 
@@ -98,6 +100,7 @@ DRNaiveEstimator = function(OBS,mismode){
     yval = 1
     yvalfix = yval
     Iy = (Y==yval)*1
+    
     
     ############################################
     # M1 =  M[y | (r,x2);(x1;z)]
@@ -131,8 +134,8 @@ DRNaiveEstimator = function(OBS,mismode){
     },DATA$X1,DATA$Z,DATA$R,DATA$X2)
     
     if (mismode == 1){
-      pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,0.2))
-      pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,0.2))
+      pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,distortval))
+      pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,distortval))
     }
     
     prob.R.X1 = mapply(function(rvaliter,x1valiter){
@@ -141,7 +144,7 @@ DRNaiveEstimator = function(OBS,mismode){
       return(jointprob.RX1/jointprob.X1)
     },DATA$R,DATA$X1)
     if (mismode == 2){
-      prob.R.X1 = fix_pred(mis_pred(prob.R.X1,0.2))
+      prob.R.X1 = fix_pred(mis_pred(prob.R.X1,distortval))
     }
     
     prob.X2.ZX1 = mapply(function(x2valiter,zvaliter,x1valiter){
