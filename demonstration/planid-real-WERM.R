@@ -1,7 +1,7 @@
 source('WERM_Heuristic.R')
 source('RID_functions.R')
 
-WERMEstimator = function(OBS,distortval,mismode){
+WERMEstimator = function(OBS,mismode,seednum){
   X1 = OBS[,1] 
   Z = OBS[,2] 
   R = OBS[,3] 
@@ -41,7 +41,7 @@ WERMEstimator = function(OBS,distortval,mismode){
   Rtrain = R 
   if (mismode == 1){
     Iy.Train = distortVar(Iy.Train,seednum)
-    X2train = distortVar(X2train,seednum)
+    # X2train = distortVar(X2train,seednum)
   }
   if (mismode == 2){
     Rtrain = distortVar(Rtrain,seednum)

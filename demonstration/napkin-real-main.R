@@ -1,4 +1,5 @@
 library(mise)
+library(tictoc)
 mise()
 
 source('napkin-real-data.R')
@@ -8,6 +9,7 @@ source('napkin-real-DR.R')
 source('napkin-real-WERM.R')  
 source('napkin-real-DR-naive.R')
 source('napkin-real-asBD.R')
+
 
 computePerformance = function(OBS,answer,prediction){
   Xunique = unique(OBS$X)[order(unique(OBS$X))]
@@ -20,27 +22,37 @@ computePerformance = function(OBS,answer,prediction){
   return(sum(abs(answer-prediction)*proportion_X))
 }
 
-mismode = 2
+args = commandArgs(trailingOnly = TRUE)
+
+mismode = as.numeric(args[1])
+N = as.numeric(args[2])
+
+print(N)
+
+N = 10000
+mismode = 0
 
 seednum = sample(1:10000000,1)
-N = 1000; Nmax = 1000
+Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
 OBS.Large = tmp[[1]]
-# OBS = tmp[[2]]
-OBS = OBS.Large
-answer1 = NaiveEstimator(OBS.Large)
+OBS = tmp[[2]]
+# OBS = OBS
+tic(); answer1 = NaiveEstimator(OBS.Large); toc(); print('Done: Answer 1')
 # answer1 = NaiveEstimator(OBS)
-# answer2 = DRNaiveEstimator(OBS.Large)
-answer = answer1 
+tic(); answer2 = DRNaiveEstimator(OBS.Large,0); toc(); print('Done: Answer 2')
+answer = (answer1 + answer2)/2
 
-PIanswer = PlugInEstimator(OBS,mismode,seednum)
-DRanswer = DREstimator(OBS,mismode,seednum)
-WERManswer = WERMEstimator(OBS,mismode,seednum)
+tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print('Done: PIanswer')
+
+tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print('Done: DRanswer')
+
+tic(); WERManswer = WERMEstimator(OBS,mismode,seednum); toc(); print('Done: WERManswer')
 # asBDanswer = asBDEstimator(OBS,mismode,seednum)
 
-performance_PI = computePerformance(OBS.Large,answer,PIanswer)
-performance_DR = computePerformance(OBS.Large,answer,DRanswer)
-performance_WERM = computePerformance(OBS.Large,answer,WERManswer)
+performance_PI = computePerformance(OBS,answer,PIanswer)
+performance_DR = computePerformance(OBS,answer,DRanswer)
+performance_WERM = computePerformance(OBS,answer,WERManswer)
 # performance_asBD = mean(abs(answer-asBDanswer))
 
 tmp_mat = matrix(round(c(performance_PI,performance_DR,performance_WERM),3),ncol=3)

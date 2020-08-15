@@ -1,6 +1,14 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
 
+myDivision = function(a,b){
+  val = a/b
+  if (is.nan(val)){
+    val = 0
+  }
+  return(val)
+}
+
 returnUnique = function(OBS){
   X1 = OBS[,1] 
   Z = OBS[,2] 
@@ -81,6 +89,7 @@ DRNaiveEstimator = function(OBS,mismode){
     allpossible[rowidx,'prob'] = nrow(filterDATA)/Ndata
   }
   
+  
   ############################################
   # Learn Models 
   ############################################
@@ -110,48 +119,54 @@ DRNaiveEstimator = function(OBS,mismode){
     Ir = (R==rvalfix)*1
     Ix2 = (X2==x2valfix)*1
     
-    # Learn P(y | r,x2,X1,Z)
-    pred.Y.rx2.X1Z = mapply(function(x1valiter,zvaliter,rvalfix,x2valfix){
-      jointprob.yrx2x1z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvalfix & allpossible$X2 == x2valfix & allpossible$Y == yval,'prob'])
-      jointprob.rx2x1z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvalfix & allpossible$X2 == x2valfix,'prob'])
-      resultval = jointprob.yrx2x1z/jointprob.rx2x1z
-      if(is.nan(resultval)){
-        resultval = 0
-      }
-      return(resultval)
-    },DATA$X1,DATA$Z,rep(rvalfix,nrow(DATA)),rep(x2valfix,nrow(DATA)))
-    # pred.Y.rx2.X1Z = rep(0,nrow(DATA))
-    
-    # pred.Y.RX2.X1Z = rep(0,nrow(DATA))
-    pred.Y.RX2.X1Z = mapply(function(x1valiter,zvaliter,rvaliter,x2valiter){
-      jointprob.yrx2x1z = allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvaliter & allpossible$X2 == x2valiter & allpossible$Y == yval,'prob']
-      jointprob.rx2x1z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvaliter & allpossible$X2 == x2valiter,'prob'])
-      resultval = jointprob.yrx2x1z/jointprob.rx2x1z
-      if(is.nan(resultval)){
-        resultval = 0
-      }
-      return(resultval)
+    returnArray = mapply(function(x1valiter,zvaliter,rvaliter,x2valiter){
+      # P(y,r,x2,X1,Z)
+      jointprob.yrx2X1Z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvalfix & allpossible$X2 == x2valfix & allpossible$Y == yval,'prob'],na.rm=T)
+      # P(y,R,X2,X1,Z)
+      jointprob.yRX2X1Z = allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvaliter & allpossible$X2 == x2valiter & allpossible$Y == yval,'prob']
+      # P(r,x2,X1,Z)
+      jointprob.rx2X1Z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvalfix & allpossible$X2 == x2valfix,'prob'],na.rm=T)
+      # P(R,X2,X1,Z)
+      jointprob.RX2X1Z = sum(allpossible[allpossible$X1==x1valiter & allpossible$Z==zvaliter & allpossible$R==rvaliter & allpossible$X2 == x2valiter,'prob'],na.rm=T)
+      # P(R,X1)
+      jointprob.RX1 = sum(allpossible[allpossible$R==rvaliter & allpossible$X1 == x1valiter,'prob'],na.rm=T)
+      # P(X1)
+      jointprob.X1 = sum(allpossible[allpossible$X1 == x1valiter,'prob'],na.rm=T)
+      # P(X2,X1,Z)
+      jointprob.X2ZX1 = sum(allpossible[allpossible$X2==x2valiter & allpossible$Z == zvaliter & allpossible$X1 == x1valiter,'prob'],na.rm=T)
+      # P(X1,Z)
+      jointprob.ZX1 = sum(allpossible[allpossible$Z == zvaliter & allpossible$X1 == x1valiter,'prob'],na.rm=T)
+      
+      # P(y|r,x2,X1,Z)
+      condprob.y.rx2X1Z = myDivision(jointprob.yrx2X1Z,jointprob.rx2X1Z)
+      # P(y|R,X2,X1,Z)
+      condprob.y.RX2X1Z = myDivision(jointprob.yRX2X1Z,jointprob.RX2X1Z)
+      # P(R|X1)
+      condprob.R.X1 = myDivision(jointprob.RX1,jointprob.X1)
+      # P(X2|X1,Z)
+      condprob.X2.X1Z = myDivision(jointprob.X2ZX1,jointprob.ZX1)
+      
+      returnval = c(condprob.y.rx2X1Z, # P(y|r,x2,X1,Z)
+                    condprob.y.RX2X1Z, # P(y|R,X2,X1,Z)
+                    condprob.R.X1, # P(R|X1)
+                    condprob.X2.X1Z # P(X2|X1,Z)
+                    ) 
+      return(returnval)
     },DATA$X1,DATA$Z,DATA$R,DATA$X2)
+    returnArray = t(returnArray)
+    
+    pred.Y.rx2.X1Z = returnArray[,1]
+    pred.Y.RX2.X1Z = returnArray[,2]
+    prob.R.X1 = returnArray[,3]
+    prob.X2.ZX1 = returnArray[,4]
     
     if (mismode == 1){
       pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,distortval))
       pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,distortval))
     }
-    
-    prob.R.X1 = mapply(function(rvaliter,x1valiter){
-      jointprob.RX1 = sum(allpossible[allpossible$R==rvaliter & allpossible$X1 == x1valiter,'prob'])
-      jointprob.X1 = sum(allpossible[allpossible$X1 == x1valiter,'prob'])
-      return(jointprob.RX1/jointprob.X1)
-    },DATA$R,DATA$X1)
     if (mismode == 2){
       prob.R.X1 = fix_pred(mis_pred(prob.R.X1,distortval))
     }
-    
-    prob.X2.ZX1 = mapply(function(x2valiter,zvaliter,x1valiter){
-      jointprob.X2ZX1 = sum(allpossible[allpossible$X2==x2valiter & allpossible$Z == zvaliter & allpossible$X1 == x1valiter,'prob'])
-      jointprob.ZX1 = sum(allpossible[allpossible$Z == zvaliter & allpossible$X1 == x1valiter,'prob'])
-      return(jointprob.X2ZX1/jointprob.ZX1)
-    },DATA$X2,DATA$Z,DATA$X1)
     
     UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
     # EIF_M1 = UIF_M1 - mean(UIF_M1)
@@ -173,21 +188,31 @@ DRNaiveEstimator = function(OBS,mismode){
     Ir = (R==rvalfix)*1
     Ix1 = (X1==x1valfix)*1
     
-    prob.X1 = mapply(function(x1valiter){
-      return(sum(allpossible[allpossible$X1==x1valiter,'prob']))
+    returnArray = mapply(function(x1valiter){
+        # P(X1)
+        jointprob.X1 = sum(allpossible[allpossible$X1==x1valiter,'prob'],na.rm=T)
+        # P(x1)
+        jointprob.x1 = sum(allpossible[allpossible$X1==x1valfix,'prob'],na.rm=T)
+        # P(r,X1)
+        jointprob.rX1 = sum(allpossible[allpossible$R==rvalfix & allpossible$X1==x1valiter,'prob'],na.rm=T)
+        # P(r,x1)
+        jointprob.rx1 = sum(allpossible[allpossible$R==rvalfix & allpossible$X1==x1valfix,'prob'],na.rm=T)
+        
+        # P(r|X1)
+        condprob.r.X1 = myDivision(jointprob.rX1,jointprob.X1)
+        # P(r|x1)
+        condprob.r.x1 = myDivision(jointprob.rx1,jointprob.x1)
+        
+        returnval = c(jointprob.X1,
+                      condprob.r.X1, # P(r|X1)
+                      condprob.r.x1 # P(r|x1)
+        ) 
     },DATA$X1)
+    returnArray = t(returnArray)
     
-    prob.r.X1 = mapply(function(rvalfix,x1valiter){
-      jointprob.rX1 = sum(allpossible[allpossible$R==rvalfix & allpossible$X1==x1valiter,'prob'])
-      jointprob.X1 = sum(allpossible[allpossible$X1==x1valiter,'prob'])
-      return(jointprob.rX1/jointprob.X1)
-    },rep(rvalfix,nrow(DATA)),DATA$X1)
-    
-    prob.r.x1 = mapply(function(rvalfix,x1valfix){
-      jointprob.rX1 = sum(allpossible[allpossible$R==rvalfix & allpossible$X1==x1valfix,'prob'])
-      jointprob.X1 = sum(allpossible[allpossible$X1==x1valfix,'prob'])
-      return(jointprob.rX1/jointprob.X1)
-    },rep(rvalfix,nrow(DATA)),rep(x1valfix,nrow(DATA)))
+    prob.X1 = returnArray[,1]
+    prob.r.X1 = returnArray[,2]
+    prob.r.x1 = returnArray[,3]
     if (mismode == 2){
       prob.r.X1 = fix_pred(mis_pred(prob.r.X1,0.2))
       prob.r.x1 = fix_pred(mis_pred(prob.r.x1,0.2))

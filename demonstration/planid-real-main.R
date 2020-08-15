@@ -22,17 +22,19 @@ computePerformance = function(OBS,answer,prediction){
   return(sum(abs(answer-prediction)*proportion_X))
 }
 
+
+
 mismode = 2
 
 seednum = sample(1:10000000,1)
 # seednum = 4536437
-# N = 500; Nmax = 1000
-OBS = dataGen(seednum)
-# OBS.Large = tmp[[1]]
-# OBS = tmp[[2]]
+N = 2000; Nmax = 1000
+tmp = dataGen(seednum,N,Nmax)
+OBS.Large = tmp[[1]]
+OBS = tmp[[2]]
 # OBS = OBS.Large
-answer1 = NaiveEstimator(OBS)
-# answer2 = DRNaiveEstimator(OBS,1)
+answer1 = NaiveEstimator(OBS.Large)
+# answer2 = DRNaiveEstimator(OBS,0)
 # answer = (answer1+answer2)/2
 answer = answer1
 
@@ -53,6 +55,5 @@ colnames(tmp_mat) = c('Plug-in','DR','WERM')
 rownames(tmp_mat) = 'Error'
 print(paste("Mismode:",mismode))
 print(tmp_mat)
-
 
 print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))

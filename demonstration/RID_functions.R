@@ -12,15 +12,10 @@ mis_pred = function(predval,distortval){
 
 distortVar = function(myvar,seednum){
   set.seed(seednum)
-  if (length(unique(myvar)) == 2){
-    mydistort = xor((myvar * rbinom(n=length(myvar),size=1,prob=0.5)),rbinom(n=length(myvar),size=1,prob=0.5))*1
-  }else{
-    myvar.unique = unique(myvar)[order(unique(myvar))]
-    tmp = rep(sample(myvar.unique),floor(length(myvar)/length(myvar.unique)))
-    if (length(tmp) < length(myvar)){
-      tmp = c(tmp,rep(0,length(myvar)-length(tmp)))
+  while(1){
+    mysample = sample(c(0:(length(unique(myvar))-1)),size=length(myvar),replace=T)  
+    if (length(unique(mysample)) == length(unique(myvar)) ){
+      return(mysample)
     }
-    mydistort = tmp 
   }
-  return(mydistort)
 }

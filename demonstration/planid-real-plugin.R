@@ -20,7 +20,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   Rtrain = R 
   if (mismode == 1){
     IyTrain = distortVar(IyTrain,seednum)
-    X2Train = distortVar(X2Train,seednum)
+    # X2Train = distortVar(X2Train,seednum)
   }
   if (mismode == 2){
     Rtrain = distortVar(Rtrain,seednum)

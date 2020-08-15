@@ -110,9 +110,12 @@ dataGen = function(seednum,N,Nmax){
   # OBS = sampled_df[,c("W","R","X","Y")]
   if (N >= nrow(OBS.Large)){
     N = nrow(OBS.Large)
+    OBS = OBS.Large 
+    return(list(OBS.Large,OBS))
+  }else{
+    # return(OBS)
+    OBS = goodSample(OBS.Large,N)
+    return(list(OBS.Large,OBS))  
   }
-  # return(OBS)
-  OBS = goodSample(OBS.Large,N)
-  return(list(OBS.Large,OBS))
 }
 

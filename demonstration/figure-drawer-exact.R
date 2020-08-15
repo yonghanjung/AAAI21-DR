@@ -3,7 +3,7 @@ library(cowplot)
 library(mise)
 library(mgcv)
 
-# mise()
+mise()
 ReadCsv = function(df.result){
   df.result = t(df.result)
   df.result = df.result[c(2:nrow(df.result)),]
@@ -69,11 +69,27 @@ ConstructDFPlot = function(instancename,mean_median){
 }
 
 
-instancename = 'Result/napkin-mismode-0-0810-1300'
-# instancename = 'Result/napkin-mismode-1-0811-1800'
+# instancename = 'Result/napkin-mismode-0-0810-1300'
+instancename = 'Result/napkin-mismode-1-0811-1800'
 # instancename = 'Result/napkin-mismode-2-0811-2030'
-df.result = ConstructDFPlot(instancename,'mean')
+df.result = ConstructDFPlot(instancename,'median')
 
+df.result.DR = ReadCsv(read.csv(paste(instancename,'-DR.csv',sep="")))
+df.result.PlugIn = ReadCsv(read.csv(paste(instancename,'-PlugIn.csv',sep="")))
+df.result.WERM = ReadCsv(read.csv(paste(instancename,'-WERM.csv',sep="")))
+tmpSD.DR = rep(0,20)
+tmpSD.PlugIn = rep(0,20)
+tmpSD.WERM = rep(0,20)
+for (idx in 1:ncol(df.result.DR)){
+  tmpSD.DR[idx] = var(df.result.DR[,idx])
+  tmpSD.PlugIn[idx] = var(df.result.PlugIn[,idx])
+  tmpSD.WERM[idx] = var(df.result.WERM[,idx])
+}
+plot(c(1:ncol(df.result.DR)),tmpSD.DR,col="red",xlab="X",ylab="Y")
+par(new=TRUE)
+plot(c(1:ncol(df.result.DR)),tmpSD.PlugIn,col="green",xlab="X",ylab="Y"))
+par(new=TRUE)
+plot(c(1:ncol(df.result.WERM)),tmpSD.WERM,col="blue",xlab="X",ylab="Y")
 
 # df.result.time = ConstructTimePlot(instancename)
 # df.result.time = read.csv('Result/napkin-0802-1030-D20-time-global.csv')

@@ -12,7 +12,8 @@ nonRandomSampleSplit = function(OBS,mysize){
   colnames(allpossible) = colnames(OBS)
   mycollect = c()
   for (rowidx in 1:nrow(allpossible)){
-    filtered_OBS = subset(OBS, W == allpossible[rowidx,'W'] & R == allpossible[rowidx,'R'] & X == allpossible[rowidx,'X'] & Y == allpossible[rowidx,'Y'] )
+    filtered_OBS = subset(OBS, X1 == allpossible[rowidx,'X1'] & Z == allpossible[rowidx,'Z'] & R == allpossible[rowidx,'R'] & X2 == allpossible[rowidx,'X2'] & Y == allpossible[rowidx,'Y'] )
+    # print(c(rowidx,nrow(filtered_OBS)))
     if (nrow(filtered_OBS) > 0){
       mycollect = rbind(mycollect,filtered_OBS[1,]) 
     }
@@ -27,7 +28,7 @@ nonRandomSampleSplit = function(OBS,mysize){
       }
     }
   }
-  
+  OBS_1 = mycollect
   totalidx = c(1:nrow(OBS))
   mycollect2 = setdiff(totalidx,as.numeric(rownames(mycollect)))
   OBS_2 = OBS[mycollect2,]
@@ -42,7 +43,7 @@ nonRandomSampleSplit = function(OBS,mysize){
       }
     }  
   }
-  OBS_1 = mycollect
+  # OBS_1 = mycollect
   rownames(OBS_1) = c(1:nrow(OBS_1))
   rownames(OBS_2) = c(1:nrow(OBS_2))
   return(list(OBS_1,OBS_2))
@@ -65,12 +66,9 @@ GoodSplit = function(OBS){
     Unique_1 = returnUnique(OBS_1)
     Unique_2 = returnUnique(OBS_2)
     stopSwitch = TRUE 
-    if (identical(Unique_1[[length(Unique_1)]],Unique_2[[length(Unique_2)]]) == FALSE){
-      stopSwitch = FALSE 
+    if (identical(Unique_1,Unique_2) == FALSE){
+      stopSwitch = FALSE
     }
-    # for (idx in 1:4){
-    #   
-    # }
     if (stopSwitch == TRUE){
       break
     }
@@ -78,6 +76,7 @@ GoodSplit = function(OBS){
       mytmp = nonRandomSampleSplit(OBS,mysize=nrow(OBS)/2)
       OBS_1 = mytmp[[1]]
       OBS_2 = mytmp[[2]]
+      break 
     }
   }
   rownames(OBS_1) = c(1:nrow(OBS_1))
@@ -115,7 +114,6 @@ DREstimator = function(OBS,mismode,seednum){
   Yunique = unique(Y)[order(unique(Y))]
   
   yvalfix = 1
-  distortval = 0.5 
   # Iy = (Y==yvalfix)*1
   
   ############################################
@@ -129,7 +127,7 @@ DREstimator = function(OBS,mismode,seednum){
     
     if (mismode == 1){
       Iy.Train = distortVar(Iy.Train,seednum)
-      X2train = distortVar(X2train,seednum)
+      # X2train = distortVar(X2train,seednum)
       # Rtrain = distortVar(Rtrain,seednum)
     }
     if (mismode == 2){
@@ -141,18 +139,18 @@ DREstimator = function(OBS,mismode,seednum){
     
     # Train the model for P(y|X1,Z,R,X2)
     regvallist = seq(0,10,by=0.2)
-    # lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
-    lambda.Y = rep(0,nrow(DATA_Train))
+    lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
+    # lambda.Y = rep(0,nrow(DATA_Train))
     model.Y = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z, R=DATA_Train$R, X2=DATA_Train$X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
     
     # Train the model for P(X2 | X1,Z)
-    # lambda.X2 = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z)), mylabel=DATA$X2, learningbinary=0,TFcontinuous=0)
-    lambda.X2 = rep(0,nrow(DATA_Train))
+    lambda.X2 = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z)), mylabel=DATA$X2, learningbinary=0,TFcontinuous=0)
+    # lambda.X2 = rep(0,nrow(DATA_Train))
     model.X2.ZX1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z)), labelval = X2train, regval = lambda.X2, binommode = 0)
     
     # Train the model for P(R | X1)
-    # lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
-    lambda.R = rep(0,nrow(DATA_Train))
+    lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
+    # lambda.R = rep(0,nrow(DATA_Train))
     model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1)),labelval = Rtrain, regval = lambda.R, binommode = 0)
     
     return(list(model.Y,model.X2.ZX1,model.R.X1))
@@ -165,7 +163,7 @@ DREstimator = function(OBS,mismode,seednum){
     ############################################
     # rvalfix = 0 
     # x2valfix = 0
-    Iy = (DATA_Eval$Y == yval)
+    Iy = (DATA_Eval$Y == yval)*1
     Ir = (DATA_Eval$R==rvalfix)*1
     Ix2 = (DATA_Eval$X2==x2valfix)*1
     
@@ -195,6 +193,10 @@ DREstimator = function(OBS,mismode,seednum){
     prob.R.X1 = mapply(function(idx,rval){
       pred.R.X1[idx,(rval+1)]
     },c(1:nrow(DATA_Eval)),DATA_Eval$R)
+    prob.r.X1 = mapply(function(idx,rval){
+      pred.R.X1[idx,(rval+1)]
+    },c(1:nrow(DATA_Eval)),rep(rvalfix,nrow(DATA_Eval)))
+    
     # if (mismode == 2){
     #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1,distortval))
     # }
@@ -204,6 +206,9 @@ DREstimator = function(OBS,mismode,seednum){
     prob.X2.ZX1 = mapply(function(idx,x2val){
       pred.X2.ZX1[idx,(x2val+1)]
     },c(1:nrow(DATA_Eval)),DATA_Eval$X2)
+    prob.x2.ZX1 = mapply(function(idx,x2val){
+      pred.X2.ZX1[idx,(x2val+1)]
+    },c(1:nrow(DATA_Eval)),rep(x2valfix,nrow(DATA_Eval)))
     
     UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
     # UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
@@ -230,6 +235,7 @@ DREstimator = function(OBS,mismode,seednum){
     Ix1 = (DATA_Eval$X1==x1valfix)*1
     
     prob.X1 = mean(DATA_Train$X1)*DATA_Eval$X1 + (1-mean(DATA_Train$X1))*(1-DATA_Eval$X1)
+    prob.x1 = mean(DATA_Train$X1)*x1valfix + (1-mean(DATA_Train$X1))*(1-x1valfix)
     
     pred.R.X1 = predict(model.R.X1,newdata=data.matrix(data.frame(X1=DATA_Eval$X1)),reshape=TRUE)
     prob.r.X1 = mapply(function(idx,rvalfix){
@@ -241,7 +247,7 @@ DREstimator = function(OBS,mismode,seednum){
     #   prob.r.x1 = fix_pred(mis_pred(prob.r.x1,distortval))
     # }
     
-    UIF_M2 = ((Ix1/prob.X1)*(Ir-prob.r.X1))+prob.r.x1
+    UIF_M2 = ((Ix1/prob.x1)*(Ir-prob.r.X1))+prob.r.x1
     # EIF_M2 = UIF_M2 - mean(UIF_M2)
     return(UIF_M2)
   }
@@ -266,7 +272,10 @@ DREstimator = function(OBS,mismode,seednum){
                               trainedlist=trainedlist, 
                               x1valfix=x1valfix, rvalfix=rvalfix)
       EIF_M2 = UIF_M2 - mean(UIF_M2,na.rm=T)
-      UIF = UIF + (UIF_M1*mean(UIF_M2,na.rm=T) + EIF_M2*mean(UIF_M1,na.rm=T))
+      sumArray = (UIF_M1*mean(UIF_M2,na.rm=T) + EIF_M2*mean(UIF_M1,na.rm=T))
+      # sumArray = (EIF_M1*mean(UIF_M2,na.rm=T) + UIF_M2*mean(UIF_M1,na.rm=T))
+      # print(mean(sumArray,na.rm=T))
+      UIF = UIF + sumArray
     }
     return(mean(UIF,na.rm=T))
   }
@@ -275,16 +284,22 @@ DREstimator = function(OBS,mismode,seednum){
   # DATA setup 
   ############################################
   DATA = data.frame(X1,Z,R,X2,Y)
-  # DATA = subset(DATA,(is.na(X1) == FALSE)&(is.na(Z) == FALSE)&(is.na(R) == FALSE)&(is.na(X2) == FALSE)&(is.na(Y) == FALSE))
+  DATA = subset(DATA,(is.na(X1) == FALSE)&(is.na(Z) == FALSE)&(is.na(R) == FALSE)&(is.na(X2) == FALSE)&(is.na(Y) == FALSE))
   
   tmp = GoodSplit(DATA)
   DATA_Train = tmp[[1]]
   DATA_Eval = tmp[[2]]
+  if (identical(returnUnique(DATA_Train),returnUnique(DATA_Eval)) == F){
+    print(c("ho",seednum))
+    DATA_Train = DATA
+    DATA_Eval = DATA 
+  }
   # DATA_Train = DATA
   # DATA_Eval = DATA
   
   trainedlist1 = TrainModel(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, DATA=DATA, mismode = mismode)
   trainedlist2 = TrainModel(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, DATA=DATA, mismode = mismode)
+  # trainedlist = trainedlist1
   # trainedlist3 = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
   # trainedlist = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
   

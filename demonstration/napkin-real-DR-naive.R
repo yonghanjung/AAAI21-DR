@@ -1,6 +1,6 @@
 source('RID_functions.R')
 
-DRNaiveEstimator = function(OBS){
+DRNaiveEstimator = function(OBS,mismode){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
   X = OBS[,3]
@@ -55,50 +55,64 @@ DRNaiveEstimator = function(OBS){
     Ixy = Ix*Iy
     
     ## Compute P(x,y|R,W)
-    prob.xy.RW = mapply(function(rval,wval){
-      jointprob.xyrw = allpossible[allpossible$X==xfix & allpossible$Y==yfix & allpossible$R==rval & allpossible$W == wval,'prob']
-      jointprob.rw = sum(allpossible[allpossible$R==rval & allpossible$W == wval,'prob'])
-      return(jointprob.xyrw/jointprob.rw)
+    returnArray = mapply(function(rval,wval){
+      # P(x,y,R,W)
+      jointprob.xfix.yfix.rval.wval = allpossible[allpossible$X==xfix & allpossible$Y==yfix & allpossible$R==rval & allpossible$W == wval,'prob']
+      # P(x,R,W)
+      jointprob.xfix.rval.wval = sum(allpossible[allpossible$X==xfix & allpossible$R==rval & allpossible$W == wval,'prob'])
+      # P(R,W)
+      jointprob.rval.wval = sum(allpossible[allpossible$R==rval & allpossible$W == wval,'prob'])
+      # P(W)
+      jointprob.wval = sum(allpossible[allpossible$W == wval,'prob'])
+      
+      # P(x,y,r,W)
+      jointprob.xfix.yfix.rfix.wval = allpossible[allpossible$X==xfix & allpossible$Y==yfix & allpossible$R==rfix & allpossible$W == wval,'prob']
+      # P(x,r,W)
+      jointprob.xfix.rfix.wval = sum(allpossible[allpossible$X==xfix & allpossible$R==rfix & allpossible$W == wval,'prob'])
+      # P(r,W)
+      jointprob.rfix.wval = sum(allpossible[allpossible$R==rfix & allpossible$W == wval,'prob'])
+      
+      # P(x,y|R,W)
+      val.prob.xfix_yfix.rval_wval = (jointprob.xfix.yfix.rval.wval/jointprob.rval.wval) 
+      # P(x,y|r,W)
+      val.prob.xfix_yfix.rfix_wval = (jointprob.xfix.yfix.rfix.wval/jointprob.rfix.wval) 
+      # P(x|R,W)
+      val.prob.xfix.rval_wval = (jointprob.xfix.rval.wval/jointprob.rval.wval) 
+      # P(x|r,W)
+      val.prob.xfix.rfix_wval = (jointprob.xfix.rfix.wval/jointprob.rfix.wval) 
+      # P(R|W)
+      val.prob.rval.wval = jointprob.rval.wval/jointprob.wval
+      # P(r|W)
+      val.prob.rfix.wval = jointprob.rfix.wval/jointprob.wval
+      
+      returnval = c(val.prob.xfix_yfix.rval_wval, # P(x,y|R,W)
+                    val.prob.xfix_yfix.rfix_wval, # P(x,y|r,W)
+                    val.prob.xfix.rval_wval, # P(x|R,W)
+                    val.prob.xfix.rfix_wval, # P(x|r,W)
+                    val.prob.rval.wval, # P(R|W)
+                    val.prob.rfix.wval # P(r|W)
+                    ) 
+      return(returnval)
     },DATA$R,DATA$W)
+    returnArray = t(returnArray)
+    
+    prob.xy.RW = returnArray[,1]
+    prob.xy.rW = returnArray[,2]
+    prob.x.RW = returnArray[,3]
+    prob.x.rW = returnArray[,4]
+    prob.R.W = returnArray[,5]
+    prob.r.W = returnArray[,6]
+    
     if (mismode == 1){
       prob.xy.RW = fix_pred(mis_pred(prob.xy.RW,distortval))
-    }
-    
-    prob.x.RW = mapply(function(rval,wval){
-      jointprob.xrw = sum(allpossible[allpossible$X==xfix & allpossible$R==rval & allpossible$W == wval,'prob'])
-      jointprob.rw = sum(allpossible[allpossible$R==rval & allpossible$W == wval,'prob'])
-      return(jointprob.xrw/jointprob.rw)
-    },DATA$R,DATA$W)
-    if (mismode == 1){
+      prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,distortval))
+      prob.x.rW = fix_pred(mis_pred(prob.x.rW,distortval))
       prob.x.RW = fix_pred(mis_pred(prob.x.RW,distortval))
     }
     
-    prob.xy.rW = mapply(function(wval){
-      jointprob.xyrw = allpossible[allpossible$X==xfix & allpossible$Y==yfix & allpossible$R==rfix & allpossible$W == wval,'prob']
-      jointprob.rw = sum(allpossible[allpossible$R==rfix & allpossible$W == wval,'prob'])
-      return(jointprob.xyrw/jointprob.rw)
-    },DATA$W)
-    if (mismode == 1){
-      prob.xy.rW = fix_pred(mis_pred(prob.xy.rW,distortval))
-    }
-    
-    
-    prob.x.rW = mapply(function(wval){
-      jointprob.xrw = sum(allpossible[allpossible$X==xfix & allpossible$R==rfix & allpossible$W == wval,'prob'])
-      jointprob.rw = sum(allpossible[allpossible$R==rfix & allpossible$W == wval,'prob'])
-      return(jointprob.xrw/jointprob.rw)
-    },DATA$W)
-    if (mismode == 1){
-      prob.x.rW = fix_pred(mis_pred(prob.x.rW,distortval))
-    }
-    
-    prob.R.W = mapply(function(rval,wval){
-      jointprob.RW = sum(allpossible[allpossible$R==rval & allpossible$W == wval,'prob'])
-      jointprob.W = sum(allpossible[allpossible$W == wval,'prob'])
-      return(jointprob.RW/jointprob.W)
-    },DATA$R,DATA$W)
     if (mismode == 2){
       prob.R.W = fix_pred(mis_pred(prob.R.W,distortval))
+      prob.r.W = fix_pred(mis_pred(prob.r.W,distortval))
     }
 
     # Compute this by IPW 
