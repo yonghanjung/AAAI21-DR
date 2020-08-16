@@ -62,7 +62,8 @@ WERM_Sampler = function(DATA, myWeight){
   norm_SW = myWeight/max(myWeight) # Normed weight ranging [0,1]
   sampled_df = data.frame() # Sampled data.frame
   num_draw = 1*nrow(DATA)
-  mediator_itermax = 2*max(round(max(myWeight)),1)
+  mediator_itermax = min(2*max(round(max(myWeight)),1),20)
+
   ################################
   # Sampling! 
   ################################

@@ -1,6 +1,34 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
 
+returnRegularizer = function(myDATA,mismode){
+  myregval = 100 
+  
+  if (mismode == 0){
+    mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+  }
+  if (mismode == 1){
+    # mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    # mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    # mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.Y = rep(0, nrow(myDATA))
+    mylambda.X = rep(0, nrow(myDATA))
+    mylambda.XY = rep(0, nrow(myDATA))
+    mylambda.R = rep(0, nrow(myDATA))
+  }
+  if (mismode == 2){
+    mylambda.Y = rep(0, nrow(myDATA))
+    mylambda.X = rep(0, nrow(myDATA))
+    mylambda.XY = rep(0, nrow(myDATA))
+    # mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.R = rep(0, nrow(myDATA))
+  }
+  return(list(mylambda.Y,mylambda.X,mylambda.XY,mylambda.R))
+}
+
 WERMEstimator = function(OBS,mismode,seednum){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
@@ -15,15 +43,10 @@ WERMEstimator = function(OBS,mismode,seednum){
   IyTrain = (Y == yvalfix)*1
   Rtrain = R 
   Xtrain = X 
-  if (mismode == 1){
-    IyTrain = distortVar(IyTrain,seednum)
-    Xtrain = distortVar(Xtrain,seednum)
-  }
-  if (mismode == 2){
-    Rtrain = distortVar(Rtrain,seednum)
-  }
+  # if (mismode == 0){
+  #   
+  # }
   
-  # Setting
   DATA = data.frame(W,R,X,Y)
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
   Ndata = nrow(DATA)
@@ -36,6 +59,21 @@ WERMEstimator = function(OBS,mismode,seednum){
   allpossible = expand.grid(tmp)
   colnames(allpossible) = c('W','R','X','Y')
   
+  # Setting
+  if (mismode == 1){
+    IyTrain = distortVar(IyTrain,seednum)
+    Xtrain = distortVar(Xtrain,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
+  
+  mylambda = returnRegularizer(DATA,mismode)
+  mylambda.Y = mylambda[[1]] 
+  mylambda.X = mylambda[[2]] 
+  mylambda.XY = mylambda[[3]] 
+  mylambda.R = mylambda[[4]] 
+  
   # Compute the Joint prob 
   for (rowidx in 1:nrow(allpossible)){
     wval = allpossible[rowidx,'W']
@@ -47,7 +85,7 @@ WERMEstimator = function(OBS,mismode,seednum){
   }
   
   ### Compute P(R|W)
-  model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = Rtrain, regval = rep(0,nrow(DATA)),binommode = 0)  
+  model.R.W = learnXG(inVar = data.matrix(data.frame(W)),labelval = Rtrain, regval = mylambda.R, binommode = 0)  
   pred.R.W = predict(model.R.W,newdata=data.matrix(data.frame(W)),type='response')
   pred.R.W  = t(matrix(pred.R.W,nrow=length(Runique)))
   prob.R.W = rep(0,nrow(DATA))
@@ -55,33 +93,49 @@ WERMEstimator = function(OBS,mismode,seednum){
     prob.R.W[idx] = pred.R.W[idx,(R[idx]+1)]
   }
   
+  # if (mismode == 2){
+  #   prob.R.W = mis_pred(prob.R.W)
+  # }
   prob.R = mapply(function(rval){
     jointprob.R = sum((Rtrain == rval)*1)/nrow(DATA)
+    # jointprob.R = sum
     return(jointprob.R)
   },DATA$R)
   
-  regvallist = seq(0,10,by=0.2)
+  # if (mismode == 2){
+  #   prob.R = mis_pred(prob.R)
+  # }
+  
+  
+  # regvallist = seq(0,10,by=0.2)
   SW_importance_sampling = prob.R/prob.R.W
-  lambda_W = learnHyperParam(regvallist = regvallist,
-                             invar = data.matrix(data.frame(W=W,R=R)),
-                             mylabel = SW_importance_sampling,
-                             learningbinary = 0, TFcontinuous = 1)
-  # learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),lambda_W)
-  learned_W = rep(0,nrow(OBS))
-  lambda_h = rep(0,nrow(OBS))
+  if (mismode == 2){
+    distortval = 0.25
+    sign_rv = 2*rbinom(n=length(SW_importance_sampling),size=1,prob=0.5)-1
+    SW_importance_sampling = SW_importance_sampling + sign_rv*rnorm(length(SW_importance_sampling),distortval,0.1)
+  }
+  # lambda_W = learnHyperParam(regvallist = regvallist,
+  #                            invar = data.matrix(data.frame(W=W,R=R)),
+  #                            mylabel = SW_importance_sampling,
+  #                            learningbinary = 0, TFcontinuous = 1)
+  learned_W = learnWdash(SW_importance_sampling,data.matrix(data.frame(W=W,R=R)),rep(0,nrow(DATA)))
+  # learned_W = rep(0,nrow(OBS))
+  # lambda_h = rep(0,nrow(OBS))
+  lambda_h = mylambda.Y
   # lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X=X)),IyTrain,1)
   YxWERM = rep(0,length(Xunique))
   idx = 1 
   for (xval in Xunique){
     # Choose the fixed R 
-    RProb = rep(0,length(Xunique))
-    rval_idx = 1
-    for (rval in Runique){
-      filtered_DATA = subset(DATA,R==rval & X==xval)
-      RProb[rval_idx] = nrow(filtered_DATA)/nrow(DATA)
-      rval_idx = rval_idx + 1 
-    } 
-    rfix = Runique[which.max(RProb)]
+    # RProb = rep(0,length(Xunique))
+    # rval_idx = 1
+    # for (rval in Runique){
+    #   filtered_DATA = subset(DATA,R==rval & X==xval)
+    #   RProb[rval_idx] = nrow(filtered_DATA)/nrow(DATA)
+    #   rval_idx = rval_idx + 1 
+    # } 
+    # rfix = Runique[which.min(RProb)]
+    rfix = 2
     YxWERM[idx] = WERM_Heuristic(inVar_train=data.frame(X=X,R=R),inVar_eval=data.frame(X=rep(xval,nrow(OBS)),R=R),Y = IyTrain, Ybinary = 1, lambda_h = lambda_h, learned_W=learned_W) 
     idx = idx + 1 
   }

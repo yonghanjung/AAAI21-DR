@@ -97,6 +97,34 @@ GoodSplit = function(OBS){
   return(list(OBS_1,OBS_2))
 }
 
+returnRegularizer = function(myDATA,mismode){
+  myregval = 100 
+  
+  if (mismode == 0){
+    mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+  }
+  if (mismode == 1){
+    # mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    # mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    # mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.Y = rep(0, nrow(myDATA))
+    mylambda.X = rep(0, nrow(myDATA))
+    mylambda.XY = rep(0, nrow(myDATA))
+    mylambda.R = rep(0, nrow(myDATA))
+  }
+  if (mismode == 2){
+    mylambda.Y = rep(0, nrow(myDATA))
+    mylambda.X = rep(0, nrow(myDATA))
+    mylambda.XY = rep(0, nrow(myDATA))
+    # mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
+    mylambda.R = rep(0, nrow(myDATA))
+  }
+  return(list(mylambda.Y,mylambda.X,mylambda.XY,mylambda.R))
+}
+
 DREstimator = function(OBS,mismode,seednum){
   ####################################################
   # TrainModel 
@@ -105,6 +133,7 @@ DREstimator = function(OBS,mismode,seednum){
     IyTrain = (DATA_Train$Y == yfix)*1
     Rtrain = DATA_Train$R 
     Xtrain = DATA_Train$X 
+    
     if (mismode == 1){
       IyTrain = distortVar(IyTrain,seednum)
       Xtrain = distortVar(Xtrain,seednum)
@@ -115,15 +144,24 @@ DREstimator = function(OBS,mismode,seednum){
     IxTrain = (Xtrain == xfix)*1
     IxyTrain = IyTrain*IxTrain
     
-    regvallist = seq(0,10,by=0.2)
-    lambda.XY = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxyTrain, learningbinary=1, TFcontinuous=F)
+    mylambda = returnRegularizer(DATA,mismode)
+    mylambda.Y = mylambda[[1]] 
+    mylambda.X = mylambda[[2]] 
+    mylambda.XY = mylambda[[3]] 
+    mylambda.R = mylambda[[4]] 
+    
+    # regvallist = seq(0,10,by=0.2)
+    # lambda.XY = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxyTrain, learningbinary=1, TFcontinuous=F)
+    lambda.XY = mylambda.XY
     model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)),labelval = IxyTrain, regval = lambda.XY, binommode = 1)
     
-    lambda.X = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxTrain, learningbinary=1, TFcontinuous=F)
+    # lambda.X = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxTrain, learningbinary=1, TFcontinuous=F)
+    lambda.X = mylambda.X
     model.x.RW = learnXG(inVar = data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)),labelval = IxTrain, regval = lambda.X, binommode = 1)
     
-    lambda.R = learnHyperParam(regvallist=regvallist, invar = data.matrix(data.frame(W=DATA_Train$W)), mylabel=IxTrain, learningbinary=0, TFcontinuous=F)
-    model.R.W = learnXG(inVar = data.matrix(data.frame(W=DATA_Train$W)), labelval = Rtrain, regval = rep(0,nrow(DATA_Train)),binommode = 0)
+    # lambda.R = learnHyperParam(regvallist=regvallist, invar = data.matrix(data.frame(W=DATA_Train$W)), mylabel=IxTrain, learningbinary=0, TFcontinuous=F)
+    lambda.R = mylambda.R
+    model.R.W = learnXG(inVar = data.matrix(data.frame(W=DATA_Train$W)), labelval = Rtrain, regval = lambda.R, binommode = 0)
     
     return(list(model.xy.RW, model.x.RW, model.R.W))
   }

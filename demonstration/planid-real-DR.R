@@ -124,17 +124,21 @@ DREstimator = function(OBS,mismode,seednum){
     Iy.Train = (DATA_Train$Y==yvalfix)*1  
     X2train = DATA_Train$X2
     Rtrain = DATA_Train$R 
-    
+    Ztrain = DATA_Train$Z 
+    X1train = DATA_Train$X1 
+
     if (mismode == 1){
       Iy.Train = distortVar(Iy.Train,seednum)
-      # X2train = distortVar(X2train,seednum)
+      # X1train = distortVar(X1train,seednum)
+      # Ztrain = distortVar(Ztrain,seednum)
       # Rtrain = distortVar(Rtrain,seednum)
     }
     if (mismode == 2){
       Rtrain = distortVar(Rtrain,seednum)
+      X2train = distortVar(X2train,seednum)
     }
-
-    # Iy.Test = (DATA_Eval$Y==yvalfix)*1
+    # 
+    # # Iy.Test = (DATA_Eval$Y==yvalfix)*1
     Iy = (DATA$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)
@@ -152,8 +156,11 @@ DREstimator = function(OBS,mismode,seednum){
     lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
     # lambda.R = rep(0,nrow(DATA_Train))
     model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1)),labelval = Rtrain, regval = lambda.R, binommode = 0)
-    
-    return(list(model.Y,model.X2.ZX1,model.R.X1))
+
+    # Train the model for P(X1)
+    model.X1 = mean(X1train)
+
+    return(list(model.Y,model.X2.ZX1,model.R.X1,model.X1))
   }
   
   
@@ -168,7 +175,7 @@ DREstimator = function(OBS,mismode,seednum){
     Ix2 = (DATA_Eval$X2==x2valfix)*1
     
     # mylist = TrainModel(DATA_Train,DATA_Eval)
-    model.Y = trainedlist[[1]]; model.X2.ZX1 = trainedlist[[2]]; model.R.X1 = trainedlist[[3]]
+    model.Y = trainedlist[[1]]; model.X2.ZX1 = trainedlist[[2]]; model.R.X1 = trainedlist[[3]]; model.X1 = trainedlist[[4]]
     
     # Learn P(y | r,x2,X1,Z)
     pred.Y.rx2.X1Z = predict(model.Y, 
@@ -183,8 +190,8 @@ DREstimator = function(OBS,mismode,seednum){
                              newdata=data.matrix(data.frame(X1=DATA_Eval$X1, Z=DATA_Eval$Z, R=DATA_Eval$R, X2=DATA_Eval$X2)),
                              type='response')
     # if (mismode == 1){
-    #   pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z,distortval))
-    #   pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z,distortval))
+    #   pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z))
+    #   pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z))
     # }
     
     # Learn P(R | X1)
@@ -198,8 +205,9 @@ DREstimator = function(OBS,mismode,seednum){
     },c(1:nrow(DATA_Eval)),rep(rvalfix,nrow(DATA_Eval)))
     
     # if (mismode == 2){
-    #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1,distortval))
+    #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1))
     # }
+    
     # Learn P(X2 | Z,X1)
     pred.X2.ZX1 = predict(model.X2.ZX1,
                           newdata=data.matrix(data.frame(X1=DATA_Eval$X1,Z=DATA_Eval$Z)),reshape=TRUE)
@@ -209,6 +217,11 @@ DREstimator = function(OBS,mismode,seednum){
     prob.x2.ZX1 = mapply(function(idx,x2val){
       pred.X2.ZX1[idx,(x2val+1)]
     },c(1:nrow(DATA_Eval)),rep(x2valfix,nrow(DATA_Eval)))
+    
+    # if (mismode == 2){
+    #   prob.X2.ZX1 = fix_pred(mis_pred(prob.X2.ZX1))
+    #   prob.x2.ZX1 = fix_pred(mis_pred(prob.x2.ZX1))
+    # }
     
     UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
     # UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
@@ -229,22 +242,23 @@ DREstimator = function(OBS,mismode,seednum){
     # x1valfix = 0 
     # rvalfix = 0 
     # mylist = TrainModel(DATA_Train,DATA_Eval)
-    model.Y = trainedlist[[1]]; model.X2.ZX1 = trainedlist[[2]]; model.R.X1 = trainedlist[[3]]
+    model.Y = trainedlist[[1]]; model.X2.ZX1 = trainedlist[[2]]; model.R.X1 = trainedlist[[3]]; model.X1 = trainedlist[[4]]
     
     Ir = (DATA_Eval$R==rvalfix)*1
     Ix1 = (DATA_Eval$X1==x1valfix)*1
     
-    prob.X1 = mean(DATA_Train$X1)*DATA_Eval$X1 + (1-mean(DATA_Train$X1))*(1-DATA_Eval$X1)
-    prob.x1 = mean(DATA_Train$X1)*x1valfix + (1-mean(DATA_Train$X1))*(1-x1valfix)
+    prob.X1 = model.X1*DATA_Eval$X1 + (1-model.X1)*(1-DATA_Eval$X1)
+    prob.x1 = model.X1*x1valfix + (1-model.X1)*(1-x1valfix)
     
     pred.R.X1 = predict(model.R.X1,newdata=data.matrix(data.frame(X1=DATA_Eval$X1)),reshape=TRUE)
     prob.r.X1 = mapply(function(idx,rvalfix){
       pred.R.X1[idx,(rvalfix+1)]
     },c(1:nrow(DATA_Eval)),rep(rvalfix,nrow(DATA_Eval)))
     prob.r.x1 = rep(predict(model.R.X1,newdata = data.matrix(data.frame(X1=x1valfix)),reshape=TRUE)[rvalfix+1],nrow(DATA_Eval))
+    
     # if (mismode == 2){
-    #   prob.r.X1 = fix_pred(mis_pred(prob.r.X1,distortval))
-    #   prob.r.x1 = fix_pred(mis_pred(prob.r.x1,distortval))
+    #   prob.r.X1 = fix_pred(mis_pred(prob.r.X1))
+    #   prob.r.x1 = fix_pred(mis_pred(prob.r.x1))
     # }
     
     UIF_M2 = ((Ix1/prob.x1)*(Ir-prob.r.X1))+prob.r.x1

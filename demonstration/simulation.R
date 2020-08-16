@@ -1,15 +1,15 @@
-library(survey)
+# library(survey)
 library(xgboost)
-library(cowplot)
+# library(cowplot)
 library(boot)
 library(ipw)
 library(Hmisc)
-library(ggplot2)
+# library(ggplot2)
 library(foreach)
-library(doParallel)
+# library(doParallel)
 library(R.utils)
-library(dplyr)
-library(doSNOW)
+# library(dplyr)
+# library(doSNOW)
 library(arm)
 library(mgcv)
 library(mise)
@@ -17,9 +17,19 @@ library(tictoc)
 
 # Log Example
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 0 '0814-2330' >log-napkin-0815-0000-mismode-0.txt & 
-## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 0 '0814-2330' >log-planid-0815-0000-mismode-0.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 0 '0814-2330' >log-planid-0815-0000-mismode-0.txt &
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 1 '0815-1100' >log-napkin-0815-1100-mismode-1.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 1 '0815-1100' >log-planid-0815-1100-mismode-1.txt & 
 
-computePerformance_planid = function(OBS,answer,prediction){
+## nohup taskset -c 0-5 Rscript simulation.R 'napkin' 100 500 1 30 0 '0816-0200' >log-napkin-0816-0200-mismode-0.txt & 
+## nohup taskset -c 6-10 Rscript simulation.R 'napkin' 100 500 1 30 1 '0816-0200' >log-napkin-0816-0200-mismode-1.txt & 
+## nohup taskset -c 11-15 Rscript simulation.R 'napkin' 100 500 1 30 2 '0816-0200' >log-napkin-0816-0200-mismode-2.txt & 
+
+## nohup taskset -c 16-21 Rscript simulation.R 'planid' 100 500 1 20 0 '0816-0200' >log-planid-0816-0200-mismode-0.txt & 
+## nohup taskset -c 22-26 Rscript simulation.R 'planid' 100 500 1 20 1 '0816-0200' >log-planid-0816-0200-mismode-1.txt & 
+## nohup taskset -c 27-31 Rscript simulation.R 'planid' 100 500 1 20 2 '0816-0200' >log-planid-0816-0200-mismode-2.txt & 
+
+reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
   X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
   idx = 1 
@@ -33,7 +43,7 @@ computePerformance_planid = function(OBS,answer,prediction){
   return(sum(abs(answer-prediction)*proportion_X))
 }
 
-computePerformance_napkin = function(OBS,answer,prediction){
+reportingPerformance_napkin = function(OBS,answer,prediction){
   Xunique = unique(OBS$X)[order(unique(OBS$X))]
   idx = 1 
   proportion_X = rep(0,length(Xunique))
@@ -42,6 +52,10 @@ computePerformance_napkin = function(OBS,answer,prediction){
     idx = idx + 1 
   }
   return(sum(abs(answer-prediction)*proportion_X))
+}
+
+reportingPerformanceAbsolute = function(OBS,answer,prediction){
+  return(mean(abs(answer-prediction),na.rm=T))
 }
 
 args = commandArgs(trailingOnly = TRUE)
@@ -56,13 +70,13 @@ mismode = as.numeric(args[6]) # 1
 filedate = args[7] # 0811-1800
 
 ### Example
-probleminstance = 'planid'
-simRound = 10
-NumUnit = 500
-nidx.start = 1
-nidx.end = 2
-mismode = 0
-filedate = 'tmp'
+# probleminstance = 'planid'
+# simRound = 10
+# NumUnit = 500
+# nidx.start = 1
+# nidx.end = 2
+# mismode = 0
+# filedate = 'tmp'
 ####
 
 Nlist = c(nidx.start:nidx.end)*NumUnit
@@ -74,6 +88,7 @@ if(probleminstance == 'napkin'){
   source('napkin-real-naive.R')
   source('napkin-real-WERM.R')
   source('napkin-real-plugin.R')
+  source('napkin-real-asBDNaive-groundtruth.R')
 }
 if (probleminstance == 'planid'){
   source('planid-real-data.R')
@@ -81,13 +96,16 @@ if (probleminstance == 'planid'){
   source('planid-real-naive.R')
   source('planid-real-WERM.R')
   source('planid-real-plugin.R')
+  source('planid-real-asBDNaive-groundtruth.R')
 }
 
 if (probleminstance == 'napkin'){
-  computePerformance = computePerformance_napkin
+  # reportPerformance = reportingPerformance_napkin
+  reportPerformance = reportingPerformanceAbsolute
 }
 if (probleminstance == 'planid'){
-  computePerformance = computePerformance_planid
+  # reportPerformance = reportingPerformance_planid
+  reportPerformance = reportingPerformanceAbsolute
 }
 
 probleminstance = paste(probleminstance,"mismode",mismode,sep="-")
@@ -148,19 +166,19 @@ for (nidx in nidx.start:nidx.end){
                       .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc','bnlearn')) %do% {
                         seednum = sample(1:10000000,1)
                         tmp = dataGen(seednum,N,Nmax)
-                        OBS.Large = tmp[[1]]
-                        OBS = tmp[[2]]
-                        answer1 = NaiveEstimator(OBS.Large)
+                        DATA = tmp[[1]]
+                        OBS.Large = tmp[[2]]
+                        OBS = tmp[[3]]
+                        answer = BDNaiveEstimator(DATA)
                         # answer2 = DRNaiveEstimator(OBS.Large)
-                        answer = answer1 
                         
                         PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
                         DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
                         WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
                         
-                        performance_PI = computePerformance(OBS.Large,answer,PIanswer)
-                        performance_DR = computePerformance(OBS.Large,answer,DRanswer)
-                        performance_WERM = computePerformance(OBS.Large,answer,WERManswer)
+                        performance_PI = reportPerformance(OBS,answer,PIanswer)
+                        performance_DR = reportPerformance(OBS,answer,DRanswer)
+                        performance_WERM = reportPerformance(OBS,answer,WERManswer)
                         
                         iter_result = c(performance_PI, performance_DR, performance_WERM)
                         system(paste("echo 'Progressing:",idx,"'"))

@@ -4,8 +4,10 @@ fix_pred = function(pred){
   return(pred)
 }
 
-mis_pred = function(predval,distortval){
-  predval = predval + rnorm(length(predval),distortval,0.1)
+mis_pred = function(predval){
+  distortval = 0.25
+  sign_rv = 2*rbinom(n=length(predval),size=1,prob=0.5)-1
+  predval = predval + sign_rv*rnorm(length(predval),distortval,0.1)
   predval = fix_pred(predval)
   return(predval)
 }
@@ -19,3 +21,4 @@ distortVar = function(myvar,seednum){
     }
   }
 }
+

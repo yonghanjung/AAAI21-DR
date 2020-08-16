@@ -41,28 +41,32 @@ WERMEstimator = function(OBS,mismode,seednum){
   Rtrain = R 
   if (mismode == 1){
     Iy.Train = distortVar(Iy.Train,seednum)
-    # X2train = distortVar(X2train,seednum)
   }
   if (mismode == 2){
     Rtrain = distortVar(Rtrain,seednum)
+    X2train = distortVar(X2train,seednum)
   }
   
   model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Iy.Train, regval = rep(0,nrow(DATA)),binommode = 1)
-  Prob.weighted.Y.rx2 = rep(0,nrow(DATA))
-  for (x1val in X1unique){
-    for (zval in Zunique){
-      myModelName = paste('model.Y.X1_',x1val,".Z_",zval,sep="")
-      myInVarName = paste("inVar.X1_",x1val,".Z_",zval,sep="")
-      myInVar = get(myInVarName)
-      myModel.Y = learnXG(inVar = data.matrix(myInVar),labelval = Iy.Train, regval = rep(0,nrow(DATA)),binommode = 1) # P(Y|x1,z,R,X2)
-      myPred.Y = predict(myModel.Y,newdata=data.matrix(myInVar),type='response')
-      myProb.Y = myPred.Y*Y + (1-myPred.Y)*(1-Y)
-      prob.X_1.Z = nrow(subset(DATA,X1==x1val & Z == zval))/nrow(DATA)
-      Prob.weighted.Y.rx2 = Prob.weighted.Y.rx2 + (myProb.Y * prob.X_1.Z)
-    }
-  }
+  # Prob.weighted.Y.rx2 = rep(0,nrow(DATA))
+  # for (x1val in X1unique){
+  #   for (zval in Zunique){
+  #     myModelName = paste('model.Y.X1_',x1val,".Z_",zval,sep="")
+  #     myInVarName = paste("inVar.X1_",x1val,".Z_",zval,sep="")
+  #     myInVar = get(myInVarName)
+  #     myModel.Y = learnXG(inVar = data.matrix(myInVar),labelval = Iy.Train, regval = rep(0,nrow(DATA)),binommode = 1) # P(Y|x1,z,R,X2)
+  #     myPred.Y = predict(myModel.Y,newdata=data.matrix(myInVar),type='response')
+  #     myProb.Y = myPred.Y*Y + (1-myPred.Y)*(1-Y)
+  #     prob.X_1.Z = nrow(subset(DATA,X1==x1val & Z == zval))/nrow(DATA)
+  #     Prob.weighted.Y.rx2 = Prob.weighted.Y.rx2 + (myProb.Y * prob.X_1.Z)
+  #   }
+  # }
   pred.Y = predict(model.Y,newdata=data.matrix(data.frame(X1,Z,R,X2)),type='response')
   prob.Y = pred.Y*Y + (1-pred.Y)*(1-Y)
+  
+  # if (mismode == 1){
+  #   prob.Y = fix_pred(mis_pred(prob.Y))
+  # }
   # SW = prob.Y/Prob.weighted.Y.rx2
   
   # P(r | x1)
@@ -72,6 +76,10 @@ WERMEstimator = function(OBS,mismode,seednum){
     return(pred.R[rowidx,rval+1])
   },c(1:nrow(DATA)),R)
   
+  # if (mismode == 2){
+  #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1))
+  # }
+  
   # P(x2 | x1,z)
   model.X2.X1Z = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2train, regval = rep(0,nrow(DATA)),binommode = 0)
   pred.X2 = t(matrix(predict(model.X2.X1Z, newdata=as.matrix(data.frame(X1,Z)), type='response'), nrow=length(X2unique)))
@@ -79,10 +87,14 @@ WERMEstimator = function(OBS,mismode,seednum){
     return(pred.X2[rowidx,x2val+1])
   },c(1:nrow(DATA)),X2)
   
+  # if (mismode == 2){
+  #   prob.X2.X1Z = fix_pred(mis_pred(prob.X2.X1Z))
+  # }
+
   # P(r) 
   prob.R.Array = rep(0,length(Runique))
   for (rval in Runique){
-    prob.R.Array[rval+1] = nrow(subset(DATA,R==rval))/nrow(DATA) 
+    prob.R.Array[rval+1] =  sum((Rtrain==rval)*1) / nrow(OBS) 
   }
   prob.R = mapply(function(rval){
     return(prob.R.Array[rval+1])
@@ -91,7 +103,7 @@ WERMEstimator = function(OBS,mismode,seednum){
   # P(x2)
   prob.X2.Array = rep(0,length(X2unique))
   for (x2val in X2unique){
-    prob.X2.Array[x2val+1] = nrow(subset(DATA,X2==x2val))/nrow(DATA) 
+    prob.X2.Array[x2val+1] = sum((X2train==x2val)*1) / nrow(OBS) 
   }
   prob.X2 = mapply(function(x2val){
     return(prob.X2.Array[x2val+1])
@@ -112,6 +124,9 @@ WERMEstimator = function(OBS,mismode,seednum){
     Ybox = Ybox + Prob.weighted.Y.rx2
   }
   Prob.weighted.Y.rx2 = Ybox/bootstrap_iter
+  # if (mismode == 1){
+  #   Prob.weighted.Y.rx2 = fix_pred(mis_pred(Prob.weighted.Y.rx2))
+  # }
   # Weight SW
   SW = prob.Y/Prob.weighted.Y.rx2
   

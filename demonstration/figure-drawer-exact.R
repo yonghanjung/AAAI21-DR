@@ -68,11 +68,20 @@ ConstructDFPlot = function(instancename,mean_median){
   return(df.Plot)
 }
 
-instancename = 'Result/napkin-mismode-0-0815-0100'
+# instancename = 'Result/napkin-mismode-0-0815-0100'; ylimits = c(0.0,0.15)
 # instancename = 'Result/napkin-mismode-1-0815-1100'
 
-# instancename = 'Result/planid-mismode-0-0815-2000'
+# instancename = 'Result/planid-mismode-0-0815-2000'; ylimits = c(0.0,0.15)
 # instancename = 'Result/planid-mismode-1-0815-1100'
+
+# instancename = 'Result/napkin-mismode-0-0816-0200'; ylimits = c(0.0,0.15)
+# instancename = 'Result/napkin-mismode-1-0816-0200'; ylimits = c(0.0,0.15)
+instancename = 'Result/napkin-mismode-2-0816-0200'; ylimits = c(0.0,0.15)
+
+# instancename = 'Result/planid-mismode-0-0816-0200'; ylimits = c(0.0,0.1)
+# instancename = 'Result/planid-mismode-1-0816-0200'; ylimits = c(0.0,0.3)
+# instancename = 'Result/planid-mismode-2-0816-0200'; ylimits = c(0.0,0.1)
+
 df.result = ConstructDFPlot(instancename,'mean')
 
 df.result.DR = ReadCsv(read.csv(paste(instancename,'-DR.csv',sep="")))
@@ -89,10 +98,9 @@ for (idx in 1:ncol(df.result.DR)){
 
 # General 
 regmethod = 'auto'
-ylimits = c(0.0,0.05)
 # xlimits = c(0,5000)
 xlimits = c(0,max(df.result$Nlist))
-spanval = 0.3
+spanval = 1
 point_size = 3
 alpha_point = 1
 

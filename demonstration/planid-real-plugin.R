@@ -14,7 +14,6 @@ PlugInEstimator = function(OBS,mismode,seednum){
   X2unique = unique(X2)[order(unique(X2))]
   Yunique = unique(Y)[order(unique(Y))]
   
-  
   IyTrain = Y 
   X2Train = X2
   Rtrain = R 
@@ -24,6 +23,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   }
   if (mismode == 2){
     Rtrain = distortVar(Rtrain,seednum)
+    X2Train = distortVar(X2Train,seednum)
   }
   
   # Setting
@@ -84,11 +84,24 @@ PlugInEstimator = function(OBS,mismode,seednum){
   Ytable = allpossible
   Ytable = Expect.Y(Ytable,DATA,1)
   
+  # if (mismode == 1){
+  #   Ytable[,'prob'] = fix_pred(mis_pred(Ytable[,'prob']))  
+  # }
+  
+  
   Prob.Z.X1.Table = allpossible 
   Prob.Z.X1.Table = Prob.Z.X1(Prob.Z.X1.Table,DATA) 
   
+  # if (mismode == 1){
+  #   Prob.Z.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.Z.X1.Table[,'prob']))  
+  # }
+  
   Prob.R.X1.Table = allpossible 
   Prob.R.X1.Table = Prob.R.X1(Prob.R.X1.Table,DATA) 
+  
+  # if (mismode == 1){
+  #   Prob.R.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.R.X1.Table[,'prob']))  
+  # }
   
   idx = 1 
   Array.Prob.X1 = rep(0,length(X1unique))
@@ -108,8 +121,8 @@ PlugInEstimator = function(OBS,mismode,seednum){
   Pzx1Table[,'prob'] = Prob.X1.Table[,'prob'] * Prob.Z.X1.Table[,'prob']
   
   ComputeVal = allpossible
-  ComputeVal$val1 = Ytable$prob * Pzx1Table$prob
-  ComputeVal$val2 = Prob.R.X1.Table$prob
+  ComputeVal$val1 = Ytable$prob * Pzx1Table$prob # P(y | x1,x2,r,z) * P(z,x1)
+  ComputeVal$val2 = Prob.R.X1.Table$prob # P(r|x1)
   
   ## Marginalizing over X1,Z
   tmp = c()
@@ -137,7 +150,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   
   for (rval in Runique){
     for(x1val in X1unique){
-      allpossible.X1R[allpossible.X1R$R==rval & allpossible.X1R$X1==x1val,'val1'] = unique(ComputeVal[ComputeVal$X1==x1val & ComputeVal$R==rval,'val2'])
+      allpossible.X1R[allpossible.X1R$R==rval & allpossible.X1R$X1==x1val,'val1'] = mean(ComputeVal[ComputeVal$X1==x1val & ComputeVal$R==rval,'val2'],na.rm=T)
     }
   }
   
