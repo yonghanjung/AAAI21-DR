@@ -73,6 +73,7 @@ dataGen = function(seednum,N,Nmax){
   set.seed(seednum)
   DATA = data.matrix(alarm) - 1
   DATA = data.frame(DATA[,c('PMB','VMCH','SHNT','INT','DISC','VTUB','KINK','VLNG','SAO2','VALV','PVS','ACO2','ANES','CCHL','TPR')])
+  DATA_Orig = DATA 
   
   # Conditioning on INT and PVS 
   INTunique = unique(DATA$INT)[order(unique(DATA$INT))]
@@ -133,15 +134,16 @@ dataGen = function(seednum,N,Nmax){
   # OBS = DATA_sampled[,covariate_to_keep]
   # colnames(OBS) = c("X1","Z","R","X2","Y")
   # return(OBS)
+  
   OBS.Large = DATA_sampled[,covariate_to_keep]
   colnames(OBS.Large) = c("X1","Z","R","X2","Y")
   if (N >= nrow(OBS.Large)){
     N = nrow(OBS.Large)
     OBS = OBS.Large 
-    return(list(OBS.Large,OBS))
+    return(list(DATA_Orig,OBS.Large,OBS))
   }else{
     OBS = goodSample(OBS.Large,N)
-    return(list(OBS.Large,OBS))
+    return(list(DATA_Orig,OBS.Large,OBS))
   }
   
   

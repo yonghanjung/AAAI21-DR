@@ -40,7 +40,7 @@ ConstructDFPlot = function(instancename,mean_median){
   }else{
     DRCenter = df.result.summary$DR.mean
     PlugInCenter = df.result.summary$PlugIn.mean
-    WERMCenter = computeColMeans(df.result.PlugIn)
+    WERMCenter = df.result.summary$WERM.mean
   }
   DRSD = ComputeSD(df.result.DR)
   DRLow = DRCenter - confidence_coef*DRSD
@@ -68,11 +68,12 @@ ConstructDFPlot = function(instancename,mean_median){
   return(df.Plot)
 }
 
+instancename = 'Result/napkin-mismode-0-0815-0100'
+# instancename = 'Result/napkin-mismode-1-0815-1100'
 
-# instancename = 'Result/napkin-mismode-0-0810-1300'
-instancename = 'Result/napkin-mismode-1-0811-1800'
-# instancename = 'Result/napkin-mismode-2-0811-2030'
-df.result = ConstructDFPlot(instancename,'median')
+# instancename = 'Result/planid-mismode-0-0815-2000'
+# instancename = 'Result/planid-mismode-1-0815-1100'
+df.result = ConstructDFPlot(instancename,'mean')
 
 df.result.DR = ReadCsv(read.csv(paste(instancename,'-DR.csv',sep="")))
 df.result.PlugIn = ReadCsv(read.csv(paste(instancename,'-PlugIn.csv',sep="")))
@@ -85,23 +86,13 @@ for (idx in 1:ncol(df.result.DR)){
   tmpSD.PlugIn[idx] = var(df.result.PlugIn[,idx])
   tmpSD.WERM[idx] = var(df.result.WERM[,idx])
 }
-plot(c(1:ncol(df.result.DR)),tmpSD.DR,col="red",xlab="X",ylab="Y")
-par(new=TRUE)
-plot(c(1:ncol(df.result.DR)),tmpSD.PlugIn,col="green",xlab="X",ylab="Y"))
-par(new=TRUE)
-plot(c(1:ncol(df.result.WERM)),tmpSD.WERM,col="blue",xlab="X",ylab="Y")
-
-# df.result.time = ConstructTimePlot(instancename)
-# df.result.time = read.csv('Result/napkin-0802-1030-D20-time-global.csv')
-# df.result.time = t(df.result.time)
-# df.result.time = df.result.time[c(2:nrow(df.result.time)),]
 
 # General 
 regmethod = 'auto'
-ylimits = c(0.0,0.1)
+ylimits = c(0.0,0.05)
 # xlimits = c(0,5000)
 xlimits = c(0,max(df.result$Nlist))
-spanval = 1
+spanval = 0.3
 point_size = 3
 alpha_point = 1
 

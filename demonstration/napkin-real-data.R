@@ -105,17 +105,20 @@ dataGen = function(seednum,N,Nmax){
   summary(sampled_df)
   
   # Making Napkin
+  # DATA = data.frame(DATA[,c('STKV','CCHL','HR','CO','BP','TPR','ANES')])
+  colnames(DATA) = c("K","W","R","X",'Y',"TPR","A")
   colnames(sampled_df) = c("K","W","R","X",'Y',"TPR","A","taking_idx")
+  # DATA = DATA[,c("W","R","X","Y")]
   OBS.Large = sampled_df[,c("W","R","X","Y")]
   # OBS = sampled_df[,c("W","R","X","Y")]
   if (N >= nrow(OBS.Large)){
     N = nrow(OBS.Large)
     OBS = OBS.Large 
-    return(list(OBS.Large,OBS))
+    return(list(DATA,OBS.Large,OBS))
   }else{
     # return(OBS)
     OBS = goodSample(OBS.Large,N)
-    return(list(OBS.Large,OBS))  
+    return(list(DATA,OBS.Large,OBS))  
   }
 }
 
