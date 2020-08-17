@@ -29,6 +29,9 @@ library(tictoc)
 ## nohup taskset -c 22-26 Rscript simulation.R 'planid' 100 500 1 20 1 '0816-0200' >log-planid-0816-0200-mismode-1.txt & 
 ## nohup taskset -c 27-31 Rscript simulation.R 'planid' 100 500 1 20 2 '0816-0200' >log-planid-0816-0200-mismode-2.txt & 
 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 10 500 1 2 '0816-1900' >log-napkinPractice-0816-1900.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 10 500 1 2 '0816-1900' >log-planidPractice-0816-1900.txt & 
+
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
   X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
@@ -66,8 +69,7 @@ simRound = as.numeric(args[2]) # 100
 NumUnit = as.numeric(args[3]) # 500
 nidx.start = as.numeric(args[4]) # 1
 nidx.end = as.numeric(args[5]) # 20
-mismode = as.numeric(args[6]) # 1
-filedate = args[7] # 0811-1800
+filedate = args[6] # 0811-1800
 
 ### Example
 # probleminstance = 'planid'
@@ -101,16 +103,16 @@ if (probleminstance == 'planid'){
 
 if (probleminstance == 'napkin'){
   # reportPerformance = reportingPerformance_napkin
-  reportPerformance = reportingPerformanceAbsolute
+  reportPerformance_Weight = reportingPerformance_napkin
 }
 if (probleminstance == 'planid'){
   # reportPerformance = reportingPerformance_planid
-  reportPerformance = reportingPerformanceAbsolute
+  reportPerformance_Weight = reportingPerformance_planid
 }
 
-probleminstance = paste(probleminstance,"mismode",mismode,sep="-")
+# probleminstance = paste(probleminstance,sep="-")
 filetitle = paste(probleminstance,filedate,sep="-")
-print(paste("Mismode:",mismode))
+# print(paste("Mismode:",mismode))
 
 timeoutFun = function(Fun, mytime){
   result = withTimeout({
@@ -143,15 +145,65 @@ print(probleminstance)
 # registerDoParallel(numCores)  # use multicore, set to the number of our cores
 
 
-mat.summary.ANSWER = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
-mat.summary.PlugIn = matrix(0,nrow=totalNumUnit,ncol=6)
-mat.summary.WERM = matrix(0,nrow=totalNumUnit,ncol=6)
-mat.summary.DR = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.ANSWER.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=6)
 
-mat.total.ANSWER = matrix(0,nrow=totalNumUnit,ncol=simRound)
-mat.total.PlugIn = matrix(0,nrow=totalNumUnit,ncol=simRound)
-mat.total.WERM = matrix(0,nrow=totalNumUnit,ncol=simRound)
-mat.total.DR = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.summary.ANSWER.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+
+mat.summary.ANSWER.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=6)
+
+mat.total.ANSWER.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis0.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+
+mat.total.ANSWER.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis1.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+
+mat.total.ANSWER.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis2.weight = matrix(0,nrow=totalNumUnit,ncol=simRound)
+
+mat.summary.ANSWER.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+
+mat.summary.ANSWER.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+
+mat.summary.ANSWER.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=6) #5th, 25th, 50th, 75th, 95th, mean 
+mat.summary.PlugIn.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.WERM.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+mat.summary.DR.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=6)
+
+mat.total.ANSWER.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis0.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+
+mat.total.ANSWER.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis1.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+
+mat.total.ANSWER.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.PlugIn.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.WERM.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
+mat.total.DR.mis2.abs = matrix(0,nrow=totalNumUnit,ncol=simRound)
 
 Nmax = 1000
 
@@ -172,83 +224,242 @@ for (nidx in nidx.start:nidx.end){
                         answer = BDNaiveEstimator(DATA)
                         # answer2 = DRNaiveEstimator(OBS.Large)
                         
-                        PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
-                        DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
-                        WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
-                        
-                        performance_PI = reportPerformance(OBS,answer,PIanswer)
-                        performance_DR = reportPerformance(OBS,answer,DRanswer)
-                        performance_WERM = reportPerformance(OBS,answer,WERManswer)
-                        
-                        iter_result = c(performance_PI, performance_DR, performance_WERM)
+                        iter_result = c()
+                        for (mismode in c(0,1,2)){
+                          PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
+                          DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
+                          WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)  
+                          
+                          performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
+                          performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
+                          performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
+                          
+                          performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
+                          performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
+                          performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
+                          
+                          iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
+                        }
+                        # iter_result = c(performance_PI, performance_DR, performance_WERM)
                         system(paste("echo 'Progressing:",idx,"'"))
-                        return(c(performance_PI, performance_DR, performance_WERM))
+                        return(iter_result)
                       }
   
-  # val.total = c()
-  # for(idx in 1:simRound){
-  #   seednum = sample(1:10000000,1)
-  #   tmp = dataGen(seednum,N,Nmax)
-  #   OBS.Large = tmp[[1]]
-  #   OBS = tmp[[2]]
-  #   answer1 = NaiveEstimator(OBS.Large)
-  #   # answer2 = DRNaiveEstimator(OBS.Large)
-  #   answer = answer1
-  # 
-  #   PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim); print(paste(N,"of",idx,"th Plug-in Done"))
-  #   DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim); print(paste(N,"of",idx,"th DR Done"))
-  #   WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim); print(paste(N,"of",idx,"th WERM Done"))
-  # 
-  #   performance_PI = computePerformance(OBS.Large,answer,PIanswer)
-  #   performance_DR = computePerformance(OBS.Large,answer,DRanswer)
-  #   performance_WERM = computePerformance(OBS.Large,answer,WERManswer)
-  # 
-  #   iter_result = c(performance_PI, performance_DR, performance_WERM)
-  #   val.total = rbind(val.total,iter_result)
-  #   print(paste("Processing",idx))
-  # }
-  # rownames(val.total) = c(1:simRound)
-  # colnames(val.total) = c("PlugIn","DR","WERM")
+  ################ Mis0, Weight ################
+  val.ANSWER.mis0.weight = rep(0,simRound)
+  val.PlugIn.mis0.weight = as.numeric(val.total[,1])
+  val.DR.mis0.weight = as.numeric(val.total[,2])
+  val.WERM.mis0.weight = as.numeric(val.total[,3])
   
-  val.ANSWER = rep(0,simRound)
-  val.PlugIn = as.numeric(val.total[,1])
-  val.DR = as.numeric(val.total[,2])
-  val.WERM = as.numeric(val.total[,3])
+  mat.total.ANSWER.mis0.weight[nidx,] = val.ANSWER.mis0.weight
+  mat.total.PlugIn.mis0.weight[nidx,] = val.PlugIn.mis0.weight
+  mat.total.DR.mis0.weight[nidx,] = val.DR.mis0.weight
+  mat.total.WERM.mis0.weight[nidx,] = val.WERM.mis0.weight
   
-  mat.total.ANSWER[nidx,] = val.ANSWER
-  mat.total.PlugIn[nidx,] = val.PlugIn
-  mat.total.DR[nidx,] = val.DR
-  mat.total.WERM[nidx,] = val.WERM
+  mat.summary.ANSWER.mis0.weight[nidx,] = returnSummary(val.ANSWER.mis0.weight)
+  mat.summary.PlugIn.mis0.weight[nidx,] = returnSummary(val.PlugIn.mis0.weight)
+  mat.summary.DR.mis0.weight[nidx,] = returnSummary(val.DR.mis0.weight)
+  mat.summary.WERM.mis0.weight[nidx,] = returnSummary(val.WERM.mis0.weight)
   
-  mat.summary.ANSWER[nidx,] = returnSummary(val.ANSWER)
-  mat.summary.PlugIn[nidx,] = returnSummary(val.PlugIn)
-  mat.summary.DR[nidx,] = returnSummary(val.DR)
-  mat.summary.WERM[nidx,] = returnSummary(val.WERM)
+  ################ Mis0, Abs ################
+  val.ANSWER.mis0.abs = rep(0,simRound)
+  val.PlugIn.mis0.abs = as.numeric(val.total[,4])
+  val.DR.mis0.abs = as.numeric(val.total[,5])
+  val.WERM.mis0.abs = as.numeric(val.total[,6])
+  
+  mat.total.ANSWER.mis0.abs[nidx,] = val.ANSWER.mis0.abs
+  mat.total.PlugIn.mis0.abs[nidx,] = val.PlugIn.mis0.abs
+  mat.total.DR.mis0.abs[nidx,] = val.DR.mis0.abs
+  mat.total.WERM.mis0.abs[nidx,] = val.WERM.mis0.abs
+  
+  mat.summary.ANSWER.mis0.abs[nidx,] = returnSummary(val.ANSWER.mis0.abs)
+  mat.summary.PlugIn.mis0.abs[nidx,] = returnSummary(val.PlugIn.mis0.abs)
+  mat.summary.DR.mis0.abs[nidx,] = returnSummary(val.DR.mis0.abs)
+  mat.summary.WERM.mis0.abs[nidx,] = returnSummary(val.WERM.mis0.abs)
+  
+  
+  ################ Mis1, Weight ################
+  val.ANSWER.mis1.weight = rep(0,simRound)
+  val.PlugIn.mis1.weight = as.numeric(val.total[,7])
+  val.DR.mis1.weight = as.numeric(val.total[,8])
+  val.WERM.mis1.weight = as.numeric(val.total[,9])
+  
+  mat.total.ANSWER.mis1.weight[nidx,] = val.ANSWER.mis1.weight
+  mat.total.PlugIn.mis1.weight[nidx,] = val.PlugIn.mis1.weight
+  mat.total.DR.mis1.weight[nidx,] = val.DR.mis1.weight
+  mat.total.WERM.mis1.weight[nidx,] = val.WERM.mis1.weight
+  
+  mat.summary.ANSWER.mis1.weight[nidx,] = returnSummary(val.ANSWER.mis1.weight)
+  mat.summary.PlugIn.mis1.weight[nidx,] = returnSummary(val.PlugIn.mis1.weight)
+  mat.summary.DR.mis1.weight[nidx,] = returnSummary(val.DR.mis1.weight)
+  mat.summary.WERM.mis1.weight[nidx,] = returnSummary(val.WERM.mis1.weight)
+  
+  ################ Mis1, Abs ################
+  val.ANSWER.mis1.abs = rep(0,simRound)
+  val.PlugIn.mis1.abs = as.numeric(val.total[,10])
+  val.DR.mis1.abs = as.numeric(val.total[,11])
+  val.WERM.mis1.abs = as.numeric(val.total[,12])
+  
+  mat.total.ANSWER.mis1.abs[nidx,] = val.ANSWER.mis1.abs
+  mat.total.PlugIn.mis1.abs[nidx,] = val.PlugIn.mis1.abs
+  mat.total.DR.mis1.abs[nidx,] = val.DR.mis1.abs
+  mat.total.WERM.mis1.abs[nidx,] = val.WERM.mis1.abs
+  
+  mat.summary.ANSWER.mis1.abs[nidx,] = returnSummary(val.ANSWER.mis1.abs)
+  mat.summary.PlugIn.mis1.abs[nidx,] = returnSummary(val.PlugIn.mis1.abs)
+  mat.summary.DR.mis1.abs[nidx,] = returnSummary(val.DR.mis1.abs)
+  mat.summary.WERM.mis1.abs[nidx,] = returnSummary(val.WERM.mis1.abs)
+  
+  ################ mis2, Weight ################
+  val.ANSWER.mis2.weight = rep(0,simRound)
+  val.PlugIn.mis2.weight = as.numeric(val.total[,13])
+  val.DR.mis2.weight = as.numeric(val.total[,14])
+  val.WERM.mis2.weight = as.numeric(val.total[,15])
+  
+  mat.total.ANSWER.mis2.weight[nidx,] = val.ANSWER.mis2.weight
+  mat.total.PlugIn.mis2.weight[nidx,] = val.PlugIn.mis2.weight
+  mat.total.DR.mis2.weight[nidx,] = val.DR.mis2.weight
+  mat.total.WERM.mis2.weight[nidx,] = val.WERM.mis2.weight
+  
+  mat.summary.ANSWER.mis2.weight[nidx,] = returnSummary(val.ANSWER.mis2.weight)
+  mat.summary.PlugIn.mis2.weight[nidx,] = returnSummary(val.PlugIn.mis2.weight)
+  mat.summary.DR.mis2.weight[nidx,] = returnSummary(val.DR.mis2.weight)
+  mat.summary.WERM.mis2.weight[nidx,] = returnSummary(val.WERM.mis2.weight)
+  
+  ################ mis2, Abs ################
+  val.ANSWER.mis2.abs = rep(0,simRound)
+  val.PlugIn.mis2.abs = as.numeric(val.total[,16])
+  val.DR.mis2.abs = as.numeric(val.total[,17])
+  val.WERM.mis2.abs = as.numeric(val.total[,18])
+  
+  mat.total.ANSWER.mis2.abs[nidx,] = val.ANSWER.mis2.abs
+  mat.total.PlugIn.mis2.abs[nidx,] = val.PlugIn.mis2.abs
+  mat.total.DR.mis2.abs[nidx,] = val.DR.mis2.abs
+  mat.total.WERM.mis2.abs[nidx,] = val.WERM.mis2.abs
+  
+  mat.summary.ANSWER.mis2.abs[nidx,] = returnSummary(val.ANSWER.mis2.abs)
+  mat.summary.PlugIn.mis2.abs[nidx,] = returnSummary(val.PlugIn.mis2.abs)
+  mat.summary.DR.mis2.abs[nidx,] = returnSummary(val.DR.mis2.abs)
+  mat.summary.WERM.mis2.abs[nidx,] = returnSummary(val.WERM.mis2.abs)
 }
 
-write.csv(mat.total.ANSWER,paste("Result/",filetitle,"-ANSWER.csv",sep=""))
-write.csv(mat.total.DR,paste("Result/",filetitle,"-DR.csv",sep=""))
-write.csv(mat.total.PlugIn,paste("Result/",filetitle,"-PlugIn.csv",sep=""))
-write.csv(mat.total.WERM,paste("Result/",filetitle,"-WERM.csv",sep=""))
+write.csv(mat.total.ANSWER.mis0.weight,paste("Result/",filetitle,"mis0-ANSWER_weight.csv",sep=""))
+write.csv(mat.total.DR.mis0.weight,paste("Result/",filetitle,"mis0-DR_weight.csv",sep=""))
+write.csv(mat.total.PlugIn.mis0.weight,paste("Result/",filetitle,"mis0-PlugIn_weight.csv",sep=""))
+write.csv(mat.total.WERM.mis0.weight,paste("Result/",filetitle,"mis0-WERM_weight.csv",sep=""))
+
+write.csv(mat.total.ANSWER.mis0.abs,paste("Result/",filetitle,"mis0-ANSWER_abs.csv",sep=""))
+write.csv(mat.total.DR.mis0.abs,paste("Result/",filetitle,"mis0-DR_abs.csv",sep=""))
+write.csv(mat.total.PlugIn.mis0.abs,paste("Result/",filetitle,"mis0-PlugIn_abs.csv",sep=""))
+write.csv(mat.total.WERM.mis0.abs,paste("Result/",filetitle,"mis0-WERM_abs.csv",sep=""))
+
+write.csv(mat.total.ANSWER.mis1.weight,paste("Result/",filetitle,"mis1-ANSWER_weight.csv",sep=""))
+write.csv(mat.total.DR.mis1.weight,paste("Result/",filetitle,"mis1-DR_weight.csv",sep=""))
+write.csv(mat.total.PlugIn.mis1.weight,paste("Result/",filetitle,"mis1-PlugIn_weight.csv",sep=""))
+write.csv(mat.total.WERM.mis1.weight,paste("Result/",filetitle,"mis1-WERM_weight.csv",sep=""))
+
+write.csv(mat.total.ANSWER.mis1.abs,paste("Result/",filetitle,"mis1-ANSWER_abs.csv",sep=""))
+write.csv(mat.total.DR.mis1.abs,paste("Result/",filetitle,"mis1-DR_abs.csv",sep=""))
+write.csv(mat.total.PlugIn.mis1.abs,paste("Result/",filetitle,"mis1-PlugIn_abs.csv",sep=""))
+write.csv(mat.total.WERM.mis1.abs,paste("Result/",filetitle,"mis1-WERM_abs.csv",sep=""))
+
+write.csv(mat.total.ANSWER.mis2.weight,paste("Result/",filetitle,"mis2-ANSWER_weight.csv",sep=""))
+write.csv(mat.total.DR.mis2.weight,paste("Result/",filetitle,"mis2-DR_weight.csv",sep=""))
+write.csv(mat.total.PlugIn.mis2.weight,paste("Result/",filetitle,"mis2-PlugIn_weight.csv",sep=""))
+write.csv(mat.total.WERM.mis2.weight,paste("Result/",filetitle,"mis2-WERM_weight.csv",sep=""))
+
+write.csv(mat.total.ANSWER.mis2.abs,paste("Result/",filetitle,"mis2-ANSWER_abs.csv",sep=""))
+write.csv(mat.total.DR.mis2.abs,paste("Result/",filetitle,"mis2-DR_abs.csv",sep=""))
+write.csv(mat.total.PlugIn.mis2.abs,paste("Result/",filetitle,"mis2-PlugIn_abs.csv",sep=""))
+write.csv(mat.total.WERM.mis2.abs,paste("Result/",filetitle,"mis2-WERM_abs.csv",sep=""))
 
 conflist = c(5,25,50,75,95,'mean')
 for (idx in 1:length(conflist)){
   confval = conflist[idx]
-  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER[,idx])
-  assign(paste('DR.',confval,sep=""),mat.summary.DR[,idx])
-  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn[,idx])
-  assign(paste('WERM.',confval,sep=""),mat.summary.WERM[,idx])
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis0.weight[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis0.weight[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis0.weight[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis0.weight[,idx])
 }
-df.result = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+df.result.mis0 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
                        DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
                        PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
                        WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
 )
-write.csv(df.result,paste("Result/",filetitle,"-summary.csv",sep=""))
+write.csv(df.result.mis0,paste("Result/",filetitle,"mis0-summary_weight.csv",sep=""))
+
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis0.abs[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis0.abs[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis0.abs[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis0.abs[,idx])
+}
+df.result.mis0 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result.mis0,paste("Result/",filetitle,"mis0-summary_abs.csv",sep=""))
+
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis1.weight[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis1.weight[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis1.weight[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis1.weight[,idx])
+}
+df.result.mis1 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result.mis1,paste("Result/",filetitle,"mis1-summary_weight.csv",sep=""))
+
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis1.abs[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis1.abs[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis1.abs[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis1.abs[,idx])
+}
+df.result.mis1 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result.mis1,paste("Result/",filetitle,"mis1-summary_abs.csv",sep=""))
 
 
-# stopCluster(cl)  
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis2.weight[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis2.weight[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis2.weight[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis2.weight[,idx])
+}
+df.result.mis2 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result.mis2,paste("Result/",filetitle,"mis2-summary_weight.csv",sep=""))
 
-
-
-
+conflist = c(5,25,50,75,95,'mean')
+for (idx in 1:length(conflist)){
+  confval = conflist[idx]
+  assign(paste('Answer.',confval,sep=""),mat.summary.ANSWER.mis2.abs[,idx])
+  assign(paste('DR.',confval,sep=""),mat.summary.DR.mis2.abs[,idx])
+  assign(paste('PlugIn.',confval,sep=""),mat.summary.PlugIn.mis2.abs[,idx])
+  assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis2.abs[,idx])
+}
+df.result.mis2 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+)
+write.csv(df.result.mis2,paste("Result/",filetitle,"mis2-summary_abs.csv",sep=""))

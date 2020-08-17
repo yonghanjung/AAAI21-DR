@@ -1,34 +1,5 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-
-returnRegularizer = function(myDATA,mismode){
-  myregval = 100 
-  
-  if (mismode == 0){
-    mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-  }
-  if (mismode == 1){
-    # mylambda.Y = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    # mylambda.X = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    # mylambda.XY = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    mylambda.Y = rep(0, nrow(myDATA))
-    mylambda.X = rep(0, nrow(myDATA))
-    mylambda.XY = rep(0, nrow(myDATA))
-    mylambda.R = rep(0, nrow(myDATA))
-  }
-  if (mismode == 2){
-    mylambda.Y = rep(0, nrow(myDATA))
-    mylambda.X = rep(0, nrow(myDATA))
-    mylambda.XY = rep(0, nrow(myDATA))
-    # mylambda.R = rep(myregval/sqrt(sqrt(nrow(myDATA))), nrow(myDATA))
-    mylambda.R = rep(0, nrow(myDATA))
-  }
-  return(list(mylambda.Y,mylambda.X,mylambda.XY,mylambda.R))
-}
-
 PlugInEstimator = function(OBS,mismode,seednum){
   W = OBS[,1] # High dim surrogate
   R = OBS[,2] # Cofounder 0-numCate
@@ -44,26 +15,19 @@ PlugInEstimator = function(OBS,mismode,seednum){
   IyTrain = (Y == yvalfix)*1
   Rtrain = R 
   Xtrain = X 
-  
+  if (mismode == 1){
+    IyTrain = distortVar(IyTrain,seednum)
+    # Xtrain = distortVar(Xtrain,seednum)
+  }
+  if (mismode == 2){
+    Rtrain = distortVar(Rtrain,seednum)
+  }
   # Setting
   DATA = cbind(W,R,X,Y)
   DATA = subset(DATA,(is.na(W) == FALSE)&(is.na(R) == FALSE)&(is.na(X) == FALSE)&(is.na(Y) == FALSE))
   DATA = data.frame(DATA)
   
-  # Setting
-  if (mismode == 1){
-    IyTrain = distortVar(IyTrain,seednum)
-    Xtrain = distortVar(Xtrain,seednum)
-  }
-  if (mismode == 2){
-    Rtrain = distortVar(Rtrain,seednum)
-  }
-  
-  mylambda = returnRegularizer(DATA,mismode)
-  mylambda.Y = mylambda[[1]] 
-  mylambda.X = mylambda[[2]] 
-  mylambda.XY = mylambda[[3]] 
-  mylambda.R = mylambda[[4]] 
+  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
   
   # Enumerate all possible values of column
   tmp = c()
@@ -75,7 +39,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   
   # Compute P(Y=1 | w,r,x)
   ExpYParam_Real = function(myallpossible,DATA,yval){
-    modelY = learnXG(as.matrix(DATA[,c('W','R','X')]), IyTrain, mylambda.Y, binommode = 1)
+    modelY = learnXG(as.matrix(DATA[,c('W','R','X')]), IyTrain, mylambda, binommode = 1)
     evalMat = as.matrix(myallpossible[,c('W','R','X')])
     predval = predict(modelY,newdata=evalMat,type='response')
     newcol = (ncol(myallpossible)+1)
@@ -86,7 +50,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   
   # Compute P(x | w,r)
   ProbXParam_Real = function(myallpossible,DATA){
-    modelX = learnXG(as.matrix(DATA[,c('W','R')]),Xtrain,mylambda.X,binommode = 0)
+    modelX = learnXG(as.matrix(DATA[,c('W','R')]),Xtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('W','R')])
     predval = predict(modelX,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=3))

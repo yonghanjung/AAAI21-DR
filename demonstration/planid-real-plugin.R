@@ -25,6 +25,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
     Rtrain = distortVar(Rtrain,seednum)
     X2Train = distortVar(X2Train,seednum)
   }
+  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
   
   # Setting
   tmp = c()
@@ -40,7 +41,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   ## Compute P(y|x1,z,r,x2)
   Expect.Y = function(myallpossible,DATA,yval){
     Iy = (DATA$Y == yval)*1
-    modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,rep(0,length(Iy)),binommode = 1)
+    modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,mylambda,binommode = 1)
     evalMat = as.matrix(myallpossible[,c('X1','Z','R','X2')])
     predval = predict(modelY,newdata=evalMat,type='response')
     newcol = (ncol(myallpossible)+1)
@@ -50,7 +51,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   }
   ## Compute P(z|x1)
   Prob.Z.X1 = function(myallpossible,DATA){
-    modelZ = learnXG(as.matrix(DATA[,c('X1')]),Z,rep(0,length(Z)),binommode = 0)
+    modelZ = learnXG(as.matrix(DATA[,c('X1')]),Z,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelZ,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=length(Zunique)))
@@ -66,7 +67,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   }
   ## Compute P(r|x1)
   Prob.R.X1 = function(myallpossible,DATA){
-    modelR = learnXG(as.matrix(DATA[,c('X1')]),Rtrain,rep(0,length(R)),binommode = 0)
+    modelR = learnXG(as.matrix(DATA[,c('X1')]),Rtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelR,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=length(Runique)))
@@ -85,22 +86,21 @@ PlugInEstimator = function(OBS,mismode,seednum){
   Ytable = Expect.Y(Ytable,DATA,1)
   
   # if (mismode == 1){
-  #   Ytable[,'prob'] = fix_pred(mis_pred(Ytable[,'prob']))  
+  #   Ytable[,'prob'] = fix_pred(mis_pred(Ytable[,'prob']))
   # }
-  
   
   Prob.Z.X1.Table = allpossible 
   Prob.Z.X1.Table = Prob.Z.X1(Prob.Z.X1.Table,DATA) 
   
   # if (mismode == 1){
-  #   Prob.Z.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.Z.X1.Table[,'prob']))  
+  #   Prob.Z.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.Z.X1.Table[,'prob']))
   # }
   
   Prob.R.X1.Table = allpossible 
   Prob.R.X1.Table = Prob.R.X1(Prob.R.X1.Table,DATA) 
   
-  # if (mismode == 1){
-  #   Prob.R.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.R.X1.Table[,'prob']))  
+  # if (mismode == 2){
+  #   Prob.R.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.R.X1.Table[,'prob']))
   # }
   
   idx = 1 

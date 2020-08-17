@@ -139,21 +139,25 @@ DREstimator = function(OBS,mismode,seednum){
     }
     # 
     # # Iy.Test = (DATA_Eval$Y==yvalfix)*1
+    mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
     Iy = (DATA$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)
     regvallist = seq(0,10,by=0.2)
-    lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
+    # lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
+    lambda.Y = mylambda
     # lambda.Y = rep(0,nrow(DATA_Train))
     model.Y = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z, R=DATA_Train$R, X2=DATA_Train$X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
     
     # Train the model for P(X2 | X1,Z)
-    lambda.X2 = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z)), mylabel=DATA$X2, learningbinary=0,TFcontinuous=0)
+    # lambda.X2 = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z)), mylabel=DATA$X2, learningbinary=0,TFcontinuous=0)
+    lambda.X2 = mylambda
     # lambda.X2 = rep(0,nrow(DATA_Train))
     model.X2.ZX1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z)), labelval = X2train, regval = lambda.X2, binommode = 0)
     
     # Train the model for P(R | X1)
-    lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
+    # lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
+    lambda.R = mylambda
     # lambda.R = rep(0,nrow(DATA_Train))
     model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1)),labelval = Rtrain, regval = lambda.R, binommode = 0)
 

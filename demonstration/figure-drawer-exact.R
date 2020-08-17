@@ -25,11 +25,25 @@ computeColMeans = function(df.result){
   return(colMeans(tmp[c(2:nrow(tmp)),],na.rm=T))
 }
 
-ConstructDFPlot = function(instancename,mean_median){
-  df.result.summary = read.csv(paste(instancename,'-summary.csv',sep=""))
-  df.result.DR = read.csv(paste(instancename,'-DR.csv',sep=""))
-  df.result.PlugIn = read.csv(paste(instancename,'-PlugIn.csv',sep=""))
-  df.result.WERM = read.csv(paste(instancename,'-WERM.csv',sep=""))
+MakeFileName = function(instancename,mismode,lossname,mymodel){
+  instancename = paste(instancename,"mis",mismode,sep="")
+  instancename = paste(instancename,'-',mymodel,"_",lossname,sep="")
+  filename = paste(instancename,".csv",sep="")
+  return(filename)
+}
+
+ConstructDFPlot = function(instancename,mismode,lossname,mean_median){
+  # instancename = "planid-0816-1900"
+  # mismode = 0
+  # lossname = "weight"
+  # instancename = paste(instancename,"mis",mismode,sep="")
+  # instancename = paste(instancename,'-summary',"_",lossname,sep="")
+  # filename = paste(instancename,".csv",sep="")
+  
+  df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))
+  df.result.DR = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='DR'))
+  df.result.PlugIn = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='PlugIn'))
+  df.result.WERM = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='WERM'))
   
   confidence_coef = 1/2
   
@@ -68,6 +82,38 @@ ConstructDFPlot = function(instancename,mean_median){
   return(df.Plot)
 }
 
+ConstructBoxPlot = function(instancename,lossname){
+  for (mismode in c(0,1,2)){
+    df.result.DR = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='DR')))
+    vector.DR = df.result.DR[,ncol(df.result.DR)]
+    
+    df.result.PlugIn = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='PlugIn')))
+    vector.PlugIn = df.result.PlugIn[,ncol(df.result.PlugIn)]
+    
+    df.result.WERM = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='WERM')))
+    vector.WERM = df.result.WERM[,ncol(df.result.WERM)]
+    
+    assign(paste('vector.DR.mis',mismode,sep=""),vector.DR)
+    assign(paste('vector.PlugIn.mis',mismode,sep=""),vector.PlugIn)
+    assign(paste('vector.WERM.mis',mismode,sep=""),vector.WERM)
+  }
+  
+  myN = length(vector.PlugIn.mis0)
+  AAE = c(vector.PlugIn.mis0,vector.PlugIn.mis1,vector.PlugIn.mis2,
+          vector.WERM.mis0,vector.WERM.mis1,vector.WERM.mis2,
+          vector.DR.mis0,vector.DR.mis1,vector.DR.mis2)
+  label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
+            rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
+            rep("DR",myN),rep("DR",myN),rep("DR",myN))
+  Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
+  plotData = data.frame(AAE,label,Type)
+  plotData$label = factor(plotData$label,c("PI","WERM","DR"))
+  plotData$mycolor = c(rep("red",3*myN),rep("green",3*myN),rep("blue",3*myN))
+  return(plotData)
+}
+
 # instancename = 'Result/napkin-mismode-0-0815-0100'; ylimits = c(0.0,0.15)
 # instancename = 'Result/napkin-mismode-1-0815-1100'
 
@@ -76,25 +122,23 @@ ConstructDFPlot = function(instancename,mean_median){
 
 # instancename = 'Result/napkin-mismode-0-0816-0200'; ylimits = c(0.0,0.15)
 # instancename = 'Result/napkin-mismode-1-0816-0200'; ylimits = c(0.0,0.15)
-instancename = 'Result/napkin-mismode-2-0816-0200'; ylimits = c(0.0,0.15)
+# instancename = 'Result/napkin-mismode-2-0816-0200'; ylimits = c(0.0,0.15)
 
 # instancename = 'Result/planid-mismode-0-0816-0200'; ylimits = c(0.0,0.1)
 # instancename = 'Result/planid-mismode-1-0816-0200'; ylimits = c(0.0,0.3)
 # instancename = 'Result/planid-mismode-2-0816-0200'; ylimits = c(0.0,0.1)
 
-df.result = ConstructDFPlot(instancename,'mean')
+# instancename = "planid-0816-1900"
+# mismode = 0
+# lossname = "weight"
+# instancename = paste(instancename,"mis",mismode,sep="")
+# instancename = paste(instancename,'-summary',"_",lossname,sep="")
+# paste(instancename,".csv",sep="")
 
-df.result.DR = ReadCsv(read.csv(paste(instancename,'-DR.csv',sep="")))
-df.result.PlugIn = ReadCsv(read.csv(paste(instancename,'-PlugIn.csv',sep="")))
-df.result.WERM = ReadCsv(read.csv(paste(instancename,'-WERM.csv',sep="")))
-tmpSD.DR = rep(0,20)
-tmpSD.PlugIn = rep(0,20)
-tmpSD.WERM = rep(0,20)
-for (idx in 1:ncol(df.result.DR)){
-  tmpSD.DR[idx] = var(df.result.DR[,idx])
-  tmpSD.PlugIn[idx] = var(df.result.PlugIn[,idx])
-  tmpSD.WERM[idx] = var(df.result.WERM[,idx])
-}
+instancename = "Result/napkin-0816-1900"; mismode = 2; lossname = "abs"; ylimits=c(0,0.5); boxlimits = c(0,0.5)
+df.result = ConstructDFPlot(instancename,mismode,lossname,'mean')
+box.result = ConstructBoxPlot(instancename,lossname)
+
 
 # General 
 regmethod = 'auto'
@@ -106,8 +150,6 @@ alpha_point = 1
 
 twoD = T
 medianTF = T
-
-
 
 gg = ggplot(data = df.result, aes(x=Nlist))
 
@@ -175,4 +217,30 @@ gg = gg + theme(axis.line.x = element_line(size = 0.5, colour = "black"),
                 axis.title.y = element_text(size=25),
                 axis.title.x = element_text(size=30)
 )
-gg
+
+
+
+ggbox = ggplot(box.result,aes(x=Type, y=AAE))
+ggbox = ggbox + geom_boxplot(aes(fill=label))
+# gg = gg + stat_summary(fun=mean, geom="point", aes(group=label), position=position_dodge(.9), color="red", size=3)
+# gg = gg + geom_errorbar(aes(x=Type,ymax = Means + SDs, ymin = Means - SDs),position = "dodge")
+ggbox = ggbox + scale_fill_manual(values=c("#FF6666","#FFFF66","#3399FF"))
+
+ggbox = ggbox + coord_cartesian(ylim=ylimits)
+# gg = gg + geom_hline(yintercept=0,color='coral',size=1)
+ggbox = ggbox + theme_bw()
+# gg = gg + scale_fill_discrete(guide = guide_legend())
+ggbox = ggbox + theme(axis.line.x = element_line(size = 0.5, colour = "black"),
+                axis.line.y = element_line(size = 0.5, colour = "black"),
+                axis.line = element_line(size=1, colour = "black"),
+                panel.border = element_blank(),
+                panel.background = element_blank(),
+                legend.text = element_text(size=25),
+                legend.title = element_blank(),
+                plot.title=element_text(size = 40),
+                axis.text.x = element_text(size = 20),
+                axis.text.y = element_text(size = 20),
+                axis.title.y = element_text(size=25),
+                axis.title.x = element_text(size=20))
+
+

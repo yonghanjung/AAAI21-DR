@@ -46,8 +46,9 @@ WERMEstimator = function(OBS,mismode,seednum){
     Rtrain = distortVar(Rtrain,seednum)
     X2train = distortVar(X2train,seednum)
   }
+  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
   
-  model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Iy.Train, regval = rep(0,nrow(DATA)),binommode = 1)
+  model.Y = learnXG(inVar = data.matrix(data.frame(X1,Z,R,X2)),labelval = Iy.Train, regval = mylambda,binommode = 1)
   # Prob.weighted.Y.rx2 = rep(0,nrow(DATA))
   # for (x1val in X1unique){
   #   for (zval in Zunique){
@@ -70,7 +71,7 @@ WERMEstimator = function(OBS,mismode,seednum){
   # SW = prob.Y/Prob.weighted.Y.rx2
   
   # P(r | x1)
-  model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1)),labelval = Rtrain, regval = rep(0,nrow(DATA)),binommode = 0)
+  model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1)),labelval = Rtrain, regval = mylambda, binommode = 0)
   pred.R = t(matrix(predict(model.R.X1, newdata=as.matrix(DATA$X1), type='response'), nrow=length(Runique)))
   prob.R.X1 = mapply(function(rowidx,rval){
     return(pred.R[rowidx,rval+1])
@@ -81,7 +82,7 @@ WERMEstimator = function(OBS,mismode,seednum){
   # }
   
   # P(x2 | x1,z)
-  model.X2.X1Z = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2train, regval = rep(0,nrow(DATA)),binommode = 0)
+  model.X2.X1Z = learnXG(inVar = data.matrix(data.frame(X1,Z)),labelval = X2train, regval = mylambda, binommode = 0)
   pred.X2 = t(matrix(predict(model.X2.X1Z, newdata=as.matrix(data.frame(X1,Z)), type='response'), nrow=length(X2unique)))
   prob.X2.X1Z = mapply(function(rowidx,x2val){
     return(pred.X2[rowidx,x2val+1])
@@ -111,14 +112,18 @@ WERMEstimator = function(OBS,mismode,seednum){
   
   # Weight SW_Y  
   SW_Y = (prob.R * prob.X2)/(prob.R.X1 * prob.X2.X1Z)
+  # if (mismode == 2){
+  #   SW_Y = SW_Y + 0.2  
+  # }
+  
   
   # Learn P^{SW_Y}(y|r,x2)
   Ybox = rep(0,nrow(DATA))
-  bootstrap_iter = 5
+  bootstrap_iter = 1
   for (idx in 1:bootstrap_iter){
     sampled_df = WERM_Sampler(DATA,SW_Y)
     # Learn Pw(y|r,x2)
-    model.weighted.Y.rx2 = learnXG(inVar = data.matrix(data.frame(R = sampled_df$R, X2 = sampled_df$X2)),labelval = Iy.Train, regval = rep(0,length(Y)), binommode = 1)
+    model.weighted.Y.rx2 = learnXG(inVar = data.matrix(data.frame(R = sampled_df$R, X2 = sampled_df$X2)),labelval = Iy.Train, regval = mylambda, binommode = 1)
     pred.weighted.Y.rx2 = predict(model.weighted.Y.rx2, newdata = data.matrix(data.frame(R, X2)),type='response')
     Prob.weighted.Y.rx2 = Y*pred.weighted.Y.rx2 + (1-Y)*(1-pred.weighted.Y.rx2)
     Ybox = Ybox + Prob.weighted.Y.rx2
@@ -129,14 +134,17 @@ WERMEstimator = function(OBS,mismode,seednum){
   # }
   # Weight SW
   SW = prob.Y/Prob.weighted.Y.rx2
+  # if (mismode == 2){
+  #   SW = SW + 0.2   
+  # }
   
   
   ################################################################
   # Learn h and W.
   ################################################################
-  regvallist = seq(0,10,by=0.2)
+  # regvallist = seq(0,10,by=0.2)
   # lambda_W = learnHyperParam(regvallist,data.matrix(DATA),SW,0,TFcontinuous = 0)
-  lambda_W = rep(0,nrow(DATA))
+  lambda_W = mylambda
   learned_W = learnWdash(SW,data.matrix(DATA),lambda_W)
   # lambda_h = learnHyperParam(regvallist,data.matrix(data.frame(X1,Z,X2)),Y,1,TFcontinuous = 0)
   lambda_h = rep(0,nrow(DATA))
