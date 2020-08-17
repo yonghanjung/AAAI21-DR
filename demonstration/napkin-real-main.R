@@ -5,12 +5,9 @@ library(tictoc)
 # taskset -c 22-31 Rscript napkin-real-main.R 0 10000
 
 suppressMessages(source('napkin-real-data.R'))
-suppressMessages(source('napkin-real-naive.R'))
 suppressMessages(source('napkin-real-plugin.R'))
 suppressMessages(source('napkin-real-DR.R'))
 suppressMessages(source('napkin-real-WERM.R'))
-suppressMessages(source('napkin-real-DR-naive.R'))
-suppressMessages(source('napkin-real-asBD-groundtruth.R'))
 suppressMessages(source('napkin-real-asBDNaive-groundtruth.R'))
 
 args = commandArgs(trailingOnly = TRUE)
@@ -61,6 +58,10 @@ mismode = as.numeric(args[1])
 seednum = sample(1:10000000,1)
 # seednum = 4536437
 N = as.numeric(args[2])
+
+mismode = 0 
+N = 10000
+
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
 DATA = tmp[[1]]

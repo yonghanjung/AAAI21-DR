@@ -7,9 +7,10 @@ PlugInEstimator = function(OBS,mismode,seednum){
   ExpYParam_Real = function(myallpossible,DATA,mylambda){
     yvalfix = 1 
     IyTrain = (DATA$Y == yvalfix)*1
+    Xtrain = DATA$X
     if (mismode == 1){
       IyTrain = distortVar(IyTrain,seednum)
-      # Xtrain = distortVar(Xtrain,seednum)
+      Xtrain = distortVar(Xtrain,seednum)
     }
     modelY = learnXG(as.matrix(DATA[,c('W','R','X')]), IyTrain, mylambda, binommode = 1)
     evalMat = as.matrix(myallpossible[,c('W','R','X')])
@@ -42,7 +43,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
   }
   
   # Compute P(r,x)
-  ProbRXParam_Real = function(myallpossible,DATA){
+  ProbRXParam_Real = function(myallpossible,DATA,mylambda){
     Xtrain = DATA$X
     Rtrain = DATA$R 
     if (mismode == 1){
@@ -64,7 +65,7 @@ PlugInEstimator = function(OBS,mismode,seednum){
     return(myallpossible)
   }
   
-  ProbWParam_Real = function(myallpossible,DATA){
+  ProbWParam_Real = function(myallpossible,DATA,mylambda){
     # Compute P(w)
     for (wval in Wunique){
       filtered_DATA_W = subset(DATA,W==wval)
@@ -104,22 +105,22 @@ PlugInEstimator = function(OBS,mismode,seednum){
   colnames(allpossible) = c('W','R','X')
   
   Ytable1 = ExpYParam_Real(allpossible,DATA_Train,mylambda)
-  Ytable2 = ExpYParam_Real(allpossible,DATA_Eval,mylambda)
+  Ytable2 = RunTryCatchProb_plugin(ExpYParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
   Ytable = (Ytable1 + Ytable2)/2
   
   # Compute P(x | r,w )
   PxTable1 = ProbXParam_Real(allpossible,DATA_Train,mylambda)
-  PxTable2 = ProbXParam_Real(allpossible,DATA_Eval,mylambda)
+  PxTable2 = RunTryCatchProb_plugin(ProbXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
   PxTable = (PxTable1 + PxTable2)/2 
   
   # Compute P(r,x)
-  PrxTable1 = ProbRXParam_Real(allpossible,DATA_Train)
-  PrxTable2 = ProbRXParam_Real(allpossible,DATA_Eval)
+  PrxTable1 = ProbRXParam_Real(allpossible,DATA_Train,mylambda)
+  PrxTable2 = RunTryCatchProb_plugin(ProbRXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
   PrxTable = (PrxTable1+PrxTable2)/2  
   
   # Compute P(w)
-  PwTable1 = ProbWParam_Real(allpossible,DATA_Train)
-  PwTable2 = ProbWParam_Real(allpossible,DATA_Eval)
+  PwTable1 = ProbWParam_Real(allpossible,DATA_Train,mylambda)
+  PwTable2 = RunTryCatchProb_plugin(ProbWParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
   PwTable = (PwTable1+PwTable2)/2
   
   allpossibleOrig = allpossible

@@ -34,6 +34,7 @@ WERMEstimator = function(OBS,mismode,seednum){
   }
   
   Train.SW = function(DATA_Train, DATA_Eval, mylambda,SW_importance_sampling){
+    
     Wtrain = DATA_Train$W 
     Rtrain = DATA_Train$R 
     if (mismode == 2){
@@ -94,26 +95,31 @@ WERMEstimator = function(OBS,mismode,seednum){
   DATA_Eval = tmp[[2]]
   
   
-
-  
-  
   # Setting
-  
-  
-  
   mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
   prob.R.W.1 = Train.P.R.W(DATA_Train,DATA_Eval,mylambda)
-  prob.R.W.2 = Train.P.R.W(DATA_Eval,DATA_Train,mylambda)
+  prob.R.W.2 = RunTryCatchProb_WERM(Train.P.R.W,DATA_Train,DATA_Eval,mylambda) 
   prob.R.W = (prob.R.W.1+prob.R.W.2)/2
   
   prob.R.1 = Train.P.R(DATA_Train,DATA_Eval,mylambda)
-  prob.R.2 = Train.P.R(DATA_Eval,DATA_Train,mylambda)
+  prob.R.2 = RunTryCatchProb_WERM(Train.P.R,DATA_Train,DATA_Eval,mylambda) 
   prob.R = (prob.R.1 + prob.R.2)/2
   
   # regvallist = seq(0,10,by=0.2)
   SW_importance_sampling = prob.R/prob.R.W
-  learned_W1 = Train.SW(DATA_Train, DATA_Eval, mylambda,SW_importance_sampling)
-  learned_W2 = Train.SW(DATA_Eval, DATA_Train, mylambda,SW_importance_sampling)
+  learned_W1 = Train.SW(DATA_Train, DATA_Eval, mylambda, SW_importance_sampling)
+  tryCatch(
+    expr = {
+      learned_W2 = Train.SW(DATA_Eval, DATA_Train, mylambda, SW_importance_sampling)
+    },
+    error = function(e){
+      print("Error in the Function")
+    },
+    finally = {
+      learned_W2 = Train.SW(DATA_Train, DATA_Eval, mylambda, SW_importance_sampling)
+    }
+  )
+  # learned_W2 = Train.SW(DATA_Eval, DATA_Train, mylambda,SW_importance_sampling)
   learned_W = (learned_W1+learned_W2)/2
   
   lambda_h = mylambda
@@ -131,7 +137,18 @@ WERMEstimator = function(OBS,mismode,seednum){
     # rfix = Runique[which.max(RProb)]
     rfix = 0
     myresult1 = Train.Yx(DATA_Train, DATA_Eval, mylambda, xval,learned_W)
-    myresult2 = Train.Yx(DATA_Eval,DATA_Train , mylambda, xval,learned_W)
+    tryCatch(
+      expr = {
+        myresult2 = Train.Yx(DATA_Eval,DATA_Train , mylambda, xval,learned_W)
+      },
+      error = function(e){
+        print("Error in the Function")
+      },
+      finally = {
+        myresult2 = Train.Yx(DATA_Train, DATA_Eval , mylambda, xval,learned_W)
+      }
+    )
+    # myresult2 = Train.Yx(DATA_Eval,DATA_Train , mylambda, xval,learned_W)
     YxWERM[idx] = (myresult1+myresult2)/2
     idx = idx + 1 
   }

@@ -33,7 +33,10 @@ library(tictoc)
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 10 500 1 2 '0816-1900' >log-planidPractice-0816-1900.txt & 
 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0816-2300' >log-napkin-0816-2300.txt & 
-## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0816-2300' >log-planid-0816-2300.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0816-2300' >log-planid-0816-2300.txt &
+
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0817-1730' >log-napkin-0817-1730.txt &
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0817-1730' >log-planid-0817-1730.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -75,13 +78,12 @@ nidx.end = as.numeric(args[5]) # 20
 filedate = args[6] # 0811-1800
 
 ### Example
-# probleminstance = 'planid'
-# simRound = 10
-# NumUnit = 500
-# nidx.start = 1
-# nidx.end = 2
-# mismode = 0
-# filedate = 'tmp'
+probleminstance = 'napkin'
+simRound = 10
+NumUnit = 500
+nidx.start = 1
+nidx.end = 2
+filedate = "1817tmp"
 ####
 
 Nlist = c(nidx.start:nidx.end)*NumUnit
@@ -90,7 +92,6 @@ totalNumUnit = (nidx.end-nidx.start)+1
 if(probleminstance == 'napkin'){
   source('napkin-real-data.R')
   source('napkin-real-DR.R')
-  source('napkin-real-naive.R')
   source('napkin-real-WERM.R')
   source('napkin-real-plugin.R')
   source('napkin-real-asBDNaive-groundtruth.R')
@@ -98,7 +99,6 @@ if(probleminstance == 'napkin'){
 if (probleminstance == 'planid'){
   source('planid-real-data.R')
   source('planid-real-DR.R')
-  source('planid-real-naive.R')
   source('planid-real-WERM.R')
   source('planid-real-plugin.R')
   source('planid-real-asBDNaive-groundtruth.R')
@@ -125,7 +125,16 @@ timeoutFun = function(Fun, mytime){
 }
 
 RunFunWithTime = function(TimeFUN, EstFUN, OBS, mismode, seednum ,timelim){
-  tic()
+  if (identical(EstFUN,PlugInEstimator)){
+    printedmsg = paste("PlugIn",mismode,seednum,sep="-")
+  }
+  if (identical(EstFUN,DREstimator)){
+    printedmsg = paste("DR",mismode,seednum,sep="-")
+  }
+  if (identical(EstFUN,WERMEstimator)){
+    printedmsg = paste("WERM",mismode,seednum,sep="-")
+  }
+  tic(msg=printedmsg)  
   estval = TimeFUN(EstFUN(OBS,mismode,seednum),timelim)
   if(is.null(estval)==T){
     estval = NA
@@ -217,7 +226,42 @@ for (nidx in nidx.start:nidx.end){
   # pb <- txtProgressBar(max = simRound, style = 3)
   # progress <- function(n) setTxtProgressBar(pb, n)
   # opts <- list(progress = progress)
-  val.total = foreach(idx= 1:simRound, .combine = 'rbind', 
+  
+  # val.total = c()
+  # for (idx in 1:simRound){
+  #   seednum = sample(1:10000000,1)
+  #   tmp = dataGen(seednum,N,Nmax)
+  #   DATA = tmp[[1]]
+  #   OBS.Large = tmp[[2]]
+  #   OBS = tmp[[3]]
+  #   answer = BDNaiveEstimator(DATA)
+  #   # answer2 = DRNaiveEstimator(OBS.Large)
+  # 
+  #   iter_result = c()
+  #   print(c(N,idx,seednum))
+  #   for (mismode in c(0,1,2)){
+  #     PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
+  #     DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
+  #     WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
+  # 
+  #     performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
+  #     performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
+  #     performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
+  # 
+  #     performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
+  #     performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
+  #     performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
+  # 
+  #     iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
+  #   }
+  #   val.total = rbind(val.total,iter_result)
+  #   # iter_result = c(performance_PI, performance_DR, performance_WERM)
+  #   system(paste("echo 'Progressing:",idx,"'"))
+  #   # return(iter_result)
+  # # }
+  # }
+    
+  val.total = foreach(idx= 1:simRound, .combine = 'rbind',
                       .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc','bnlearn')) %do% {
                         seednum = sample(1:10000000,1)
                         tmp = dataGen(seednum,N,Nmax)
@@ -226,28 +270,28 @@ for (nidx in nidx.start:nidx.end){
                         OBS = tmp[[3]]
                         answer = BDNaiveEstimator(DATA)
                         # answer2 = DRNaiveEstimator(OBS.Large)
-                        
+
                         iter_result = c()
                         for (mismode in c(0,1,2)){
                           PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
                           DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
-                          WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)  
-                          
+                          WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
+
                           performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
                           performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
-                          
+
                           performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
                           performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
                           performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
-                          
+
                           iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
                         }
                         # iter_result = c(performance_PI, performance_DR, performance_WERM)
                         system(paste("echo 'Progressing:",idx,"'"))
                         return(iter_result)
                       }
-  
+  # 
   ################ Mis0, Weight ################
   val.ANSWER.mis0.weight = rep(0,simRound)
   val.PlugIn.mis0.weight = as.numeric(val.total[,1])

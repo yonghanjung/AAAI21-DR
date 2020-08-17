@@ -222,8 +222,9 @@ ConstructMultipleGG = function(instancename,lossname,ylimits,box_ylimit,mean_med
 # instancename = paste(instancename,'-summary',"_",lossname,sep="")
 # paste(instancename,".csv",sep="")
 
-instancename = "Result/napkin-0816-2300"; mismode = 0; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
-# instancename = "Result/planid-0816-2300"; mismode = 0; lossname = "weight"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+# instancename = "Result/napkin-0816-2300"; mismode = 0; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+# instancename = "Result/planid-0816-2300"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+instancename = "Result/napkin-1817tmp"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
 # df.result = ConstructDFPlot(instancename,mismode,lossname,'mean')
 # gg = ConstructDrawGG(instancename,mismode,lossname,ylimits,'mean')
 gg = ConstructMultipleGG(instancename,lossname,ylimits,boxlimits,'mean')

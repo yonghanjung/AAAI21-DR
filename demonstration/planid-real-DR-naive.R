@@ -9,45 +9,6 @@ myDivision = function(a,b){
   return(val)
 }
 
-returnUnique = function(OBS){
-  X1 = OBS[,1] 
-  Z = OBS[,2] 
-  R = OBS[,3] 
-  X2 = OBS[,4]  
-  Y = OBS[,5]
-  X1unique = unique(X1)[order(unique(X1))]
-  Zunique = unique(Z)[order(unique(Z))]
-  Runique = unique(R)[order(unique(R))]
-  X2unique = unique(X2)[order(unique(X2))]
-  Yunique = unique(Y)[order(unique(Y))]
-  return(list(X1unique,Zunique,Runique,X2unique,Yunique))
-}
-
-GoodSplit = function(OBS){
-  totalidx = c(1:nrow(OBS))
-  
-  while(1){
-    splitidx_1 = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
-    splitidx_2 = setdiff(totalidx,splitidx_1)
-    OBS_1 = OBS[splitidx_1,]
-    OBS_2 = OBS[splitidx_2,]
-    
-    Unique_1 = returnUnique(OBS_1)
-    Unique_2 = returnUnique(OBS_2)
-    stopSwitch = TRUE 
-    for (idx in 1:5){
-      if (identical(Unique_1,Unique_2) == FALSE){
-        stopSwitch = FALSE 
-      }
-    }
-    if (stopSwitch == TRUE){
-      break
-    }
-  }
-  rownames(OBS_1) = c(1:nrow(OBS_1))
-  rownames(OBS_2) = c(1:nrow(OBS_2))
-  return(list(OBS_1,OBS_2))
-}
 
 
 DRNaiveEstimator = function(OBS,mismode){

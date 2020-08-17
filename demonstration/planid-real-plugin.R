@@ -1,46 +1,15 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
+source("DRModule.R")
+
 PlugInEstimator = function(OBS,mismode,seednum){
-  X1 = OBS[,1] 
-  Z = OBS[,2] 
-  R = OBS[,3] 
-  X2 = OBS[,4]  
-  Y = OBS[,5]
-  DATA = data.frame(X1,Z,R,X2,Y)
-  
-  X1unique = unique(X1)[order(unique(X1))]
-  Zunique = unique(Z)[order(unique(Z))]
-  Runique = unique(R)[order(unique(R))]
-  X2unique = unique(X2)[order(unique(X2))]
-  Yunique = unique(Y)[order(unique(Y))]
-  
-  IyTrain = Y 
-  X2Train = X2
-  Rtrain = R 
-  if (mismode == 1){
-    IyTrain = distortVar(IyTrain,seednum)
-    # X2Train = distortVar(X2Train,seednum)
-  }
-  if (mismode == 2){
-    Rtrain = distortVar(Rtrain,seednum)
-    X2Train = distortVar(X2Train,seednum)
-  }
-  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
-  
-  # Setting
-  tmp = c()
-  tmp = append(tmp,list(X1unique)) # X1 # RiskAversion: 0 highest 
-  tmp = append(tmp, list(Zunique)) # Z
-  tmp = append(tmp,list(Runique)) # R
-  tmp = append(tmp,list(X2unique)) # X2 # Accident: 3 highest 
-  allpossible = expand.grid(tmp)
-  colnames(allpossible) = c('X1','Z','R','X2')
-  
-  # Causal Query 
-  ## P(y|do(x)) = \sum_{r}P(r|x1)\sum_{x1',z}P(y|x1,z,r,x2)P(z,x1')
+  yvalfix = 1 
   ## Compute P(y|x1,z,r,x2)
-  Expect.Y = function(myallpossible,DATA,yval){
-    Iy = (DATA$Y == yval)*1
+  Expect.Y = function(myallpossible,DATA,mylambda){
+    IyTrain = (DATA$Y == yvalfix)*1
+    if (mismode == 1){
+      IyTrain = distortVar(IyTrain,seednum)
+    }
     modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,mylambda,binommode = 1)
     evalMat = as.matrix(myallpossible[,c('X1','Z','R','X2')])
     predval = predict(modelY,newdata=evalMat,type='response')
@@ -49,9 +18,10 @@ PlugInEstimator = function(OBS,mismode,seednum){
     colnames(myallpossible)[ncol(myallpossible)] = 'prob'
     return(myallpossible)
   }
+  
   ## Compute P(z|x1)
-  Prob.Z.X1 = function(myallpossible,DATA){
-    modelZ = learnXG(as.matrix(DATA[,c('X1')]),Z,mylambda,binommode = 0)
+  Prob.Z.X1 = function(myallpossible,DATA,mylambda){
+    modelZ = learnXG(as.matrix(DATA[,c('X1')]),DATA$Z,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelZ,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=length(Zunique)))
@@ -65,8 +35,16 @@ PlugInEstimator = function(OBS,mismode,seednum){
     colnames(myallpossible)[ncol(myallpossible)] = 'prob'
     return(myallpossible)
   }
+  
   ## Compute P(r|x1)
-  Prob.R.X1 = function(myallpossible,DATA){
+  Prob.R.X1 = function(myallpossible,DATA,mylambda){
+    Rtrain = DATA$R
+    X2Train = DATA$X2
+    if (mismode == 2){
+      Rtrain = distortVar(Rtrain,seednum)
+      X2Train = distortVar(X2Train,seednum)
+    }
+    
     modelR = learnXG(as.matrix(DATA[,c('X1')]),Rtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelR,newdata=evalMat,type='response')
@@ -82,26 +60,53 @@ PlugInEstimator = function(OBS,mismode,seednum){
     return(myallpossible)
   }
   
-  Ytable = allpossible
-  Ytable = Expect.Y(Ytable,DATA,1)
+  X1 = OBS[,1] 
+  Z = OBS[,2] 
+  R = OBS[,3] 
+  X2 = OBS[,4]  
+  Y = OBS[,5]
   
-  # if (mismode == 1){
-  #   Ytable[,'prob'] = fix_pred(mis_pred(Ytable[,'prob']))
-  # }
+  X1unique = unique(X1)[order(unique(X1))]
+  Zunique = unique(Z)[order(unique(Z))]
+  Runique = unique(R)[order(unique(R))]
+  X2unique = unique(X2)[order(unique(X2))]
+  Yunique = unique(Y)[order(unique(Y))]
   
-  Prob.Z.X1.Table = allpossible 
-  Prob.Z.X1.Table = Prob.Z.X1(Prob.Z.X1.Table,DATA) 
+  DATA = data.frame(X1,Z,R,X2,Y)
+  Ndata = nrow(DATA)
   
-  # if (mismode == 1){
-  #   Prob.Z.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.Z.X1.Table[,'prob']))
-  # }
+  tmp = GoodSplit(DATA)
+  DATA_Train = tmp[[1]]
+  DATA_Eval = tmp[[2]]
   
-  Prob.R.X1.Table = allpossible 
-  Prob.R.X1.Table = Prob.R.X1(Prob.R.X1.Table,DATA) 
+  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
   
-  # if (mismode == 2){
-  #   Prob.R.X1.Table[,'prob'] = fix_pred(mis_pred(Prob.R.X1.Table[,'prob']))
-  # }
+  # Enumerate all possible values of column
+  tmp = c()
+  tmp = append(tmp,list(X1unique)) # X1 # RiskAversion: 0 highest 
+  tmp = append(tmp, list(Zunique)) # Z
+  tmp = append(tmp,list(Runique)) # R
+  tmp = append(tmp,list(X2unique)) # X2 # Accident: 3 highest 
+  allpossible = expand.grid(tmp)
+  colnames(allpossible) = c('X1','Z','R','X2')
+  
+  
+  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
+  
+  Ytable1 = Expect.Y(allpossible,DATA_Train,mylambda)
+  Ytable2 = RunTryCatchProb_plugin(Expect.Y, allpossible, DATA_Train, DATA_Eval, mylambda)
+  Ytable = (Ytable1 + Ytable2)/2
+  
+  Prob.Z.X1.Table.1 = Prob.Z.X1(allpossible,DATA_Train,mylambda)
+  Prob.Z.X1.Table.2 = RunTryCatchProb_plugin(Prob.Z.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
+  Prob.Z.X1.Table = (Prob.Z.X1.Table.1 + Prob.Z.X1.Table.2)/2
+  
+  Prob.R.X1.Table.1 = Prob.R.X1(allpossible,DATA_Train,mylambda)
+  Prob.R.X1.Table.2 = RunTryCatchProb_plugin(Prob.R.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
+  Prob.R.X1.Table = (Prob.R.X1.Table.1+Prob.R.X1.Table.2)/2
+  
+  # Causal Query 
+  ## P(y|do(x)) = \sum_{r}P(r|x1)\sum_{x1',z}P(y|x1,z,r,x2)P(z,x1')
   
   idx = 1 
   Array.Prob.X1 = rep(0,length(X1unique))

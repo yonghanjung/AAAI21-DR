@@ -72,7 +72,6 @@ NaiveEstimator = function(OBS){
     return(myallpossible)
   }
   
-  
   Ytable = allpossible
   Ytable = ExpYParam_Real(Ytable,DATA,1)
   

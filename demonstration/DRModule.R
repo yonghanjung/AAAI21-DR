@@ -17,6 +17,8 @@ recursiveFilter = function(OBS,allpossible,rowidx){
 }
 
 nonRandomSampleSplit = function(OBS,mysize){
+  # tic(msg="nonRandomSample"); toc()
+  # print("nonRandomSample")
   OBSuniqueList = returnUnique(OBS)
   # Enumerate all possible values of column
   tmp = c()
@@ -43,22 +45,24 @@ nonRandomSampleSplit = function(OBS,mysize){
       }
     }
   }
-  
+  OBS_1 = mycollect
   totalidx = c(1:nrow(OBS))
   mycollect2 = setdiff(totalidx,as.numeric(rownames(mycollect)))
+  
   OBS_2 = OBS[mycollect2,]
-  OBS_2_unique = returnUnique(OBS_2)
-  OBS_1_unique = returnUnique(OBS_1)
-  if (identical( OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] ) == FALSE){
-    while(1){
-      splitidx = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
-      OBS_2 = OBS[splitidx,]
-      if (identical(OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] )){
-        break
-      }
-    }  
-  }
-  OBS_1 = mycollect
+  
+  # OBS_2_unique = returnUnique(OBS_2)
+  # OBS_1_unique = returnUnique(OBS_1)
+  # if (identical( OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] ) == FALSE){
+  #   while(1){
+  #     splitidx = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
+  #     OBS_2 = OBS[splitidx,]
+  #     if (identical(OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] )){
+  #       break
+  #     }
+  #   }  
+  # }
+  # OBS_1 = mycollect
   rownames(OBS_1) = c(1:nrow(OBS_1))
   rownames(OBS_2) = c(1:nrow(OBS_2))
   return(list(OBS_1,OBS_2))
@@ -71,6 +75,7 @@ GoodSplit = function(OBS){
   iterMax = 10
   
   while(1){
+    # print(iteridx)
     iteridx = iteridx + 1 
     
     splitidx_1 = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
@@ -91,9 +96,40 @@ GoodSplit = function(OBS){
       mytmp = nonRandomSampleSplit(OBS,mysize=nrow(OBS)/2)
       OBS_1 = mytmp[[1]]
       OBS_2 = mytmp[[2]]
+      break 
     }
   }
   rownames(OBS_1) = c(1:nrow(OBS_1))
   rownames(OBS_2) = c(1:nrow(OBS_2))
   return(list(OBS_1,OBS_2))
+}
+
+RunTryCatchProb_plugin = function(FUN, allpossible, DATA_Train, Data_Eval, mylambda){
+  tryCatch(
+    expr = {
+      myresult = FUN(allpossible,Data_Eval,mylambda)  
+    },
+    error = function(e){
+      print("Error in the Function")
+    },
+    finally = {
+      myresult = FUN(allpossible,DATA_Train,mylambda)  
+    }
+  )
+  return(myresult)
+}
+
+RunTryCatchProb_WERM = function(FUN, DATA_Train, Data_Eval, mylambda){
+  tryCatch(
+    expr = {
+      myresult = FUN(Data_Eval,DATA_Train,mylambda)  
+    },
+    error = function(e){
+      print("Error in the Function")
+    },
+    finally = {
+      myresult = FUN(DATA_Train,Data_Eval,mylambda)  
+    }
+  )
+  return(myresult)
 }
