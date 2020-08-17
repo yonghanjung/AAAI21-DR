@@ -1,101 +1,6 @@
 source('RID_functions.R')
 source('WERM_Heuristic.R')
-
-returnUnique = function(OBS){
-  W = OBS[,1] # High dim surrogate
-  R = OBS[,2] # Cofounder 0-numCate
-  X = OBS[,3]
-  Y = OBS[,4]
-  Wunique = unique(W)[order(unique(W))]
-  Runique = unique(R)[order(unique(R))]
-  Xunique = unique(X)[order(unique(X))]
-  Yunique = unique(Y)[order(unique(Y))]
-  return(list(Wunique,Runique,Xunique,Yunique))
-}
-
-nonRandomSampleSplit = function(OBS,mysize){
-  OBSuniqueList = returnUnique(OBS)
-  # Enumerate all possible values of column
-  tmp = c()
-  for (idx in 1:length(OBSuniqueList)){
-    tmp = append(tmp,list(OBSuniqueList[[idx]]))
-  }
-  allpossible = expand.grid(tmp)
-  colnames(allpossible) = colnames(OBS)
-  mycollect = c()
-  for (rowidx in 1:nrow(allpossible)){
-    filtered_OBS = subset(OBS, W == allpossible[rowidx,'W'] & R == allpossible[rowidx,'R'] & X == allpossible[rowidx,'X'] & Y == allpossible[rowidx,'Y'] )
-    if (nrow(filtered_OBS) > 0){
-      mycollect = rbind(mycollect,filtered_OBS[1,]) 
-    }
-  }
-  if (nrow(mycollect) < mysize){
-    for (rowidx in 1:nrow(OBS)){
-      if (rowidx %in% as.numeric(rownames(mycollect)) == FALSE){
-        mycollect = rbind(mycollect,OBS[rowidx,])  
-      }
-      if (nrow(mycollect) == mysize){
-        break 
-      }
-    }
-  }
-  
-  totalidx = c(1:nrow(OBS))
-  mycollect2 = setdiff(totalidx,as.numeric(rownames(mycollect)))
-  OBS_2 = OBS[mycollect2,]
-  OBS_2_unique = returnUnique(OBS_2)
-  OBS_1_unique = returnUnique(OBS_1)
-  if (identical( OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] ) == FALSE){
-    while(1){
-      splitidx = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
-      OBS_2 = OBS[splitidx,]
-      if (identical(OBS_2_unique[[length(OBS_2_unique)]], OBS_1_unique[[length(OBS_1_unique)]] )){
-        break
-      }
-    }  
-  }
-  OBS_1 = mycollect
-  rownames(OBS_1) = c(1:nrow(OBS_1))
-  rownames(OBS_2) = c(1:nrow(OBS_2))
-  return(list(OBS_1,OBS_2))
-}
-
-GoodSplit = function(OBS){
-  totalidx = c(1:nrow(OBS))
-  
-  iteridx = 0
-  iterMax = 10
-  
-  while(1){
-    iteridx = iteridx + 1 
-    
-    splitidx_1 = sample(c(1:nrow(OBS)),size=nrow(OBS)/2)
-    splitidx_2 = setdiff(totalidx,splitidx_1)
-    OBS_1 = OBS[splitidx_1,]
-    OBS_2 = OBS[splitidx_2,]
-    
-    Unique_1 = returnUnique(OBS_1)
-    Unique_2 = returnUnique(OBS_2)
-    stopSwitch = TRUE 
-    if (identical(Unique_1,Unique_2) == FALSE){
-      stopSwitch = FALSE 
-    }
-    # for (idx in 1:4){
-    #   
-    # }
-    if (stopSwitch == TRUE){
-      break
-    }
-    if (iteridx > iterMax){
-      mytmp = nonRandomSampleSplit(OBS,mysize=nrow(OBS)/2)
-      OBS_1 = mytmp[[1]]
-      OBS_2 = mytmp[[2]]
-    }
-  }
-  rownames(OBS_1) = c(1:nrow(OBS_1))
-  rownames(OBS_2) = c(1:nrow(OBS_2))
-  return(list(OBS_1,OBS_2))
-}
+source('DRModule.R')
 
 DREstimator = function(OBS,mismode,seednum){
   ####################################################
@@ -117,7 +22,7 @@ DREstimator = function(OBS,mismode,seednum){
     
     mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
     
-    # regvallist = seq(0,10,by=0.2)
+    regvallist = seq(0,10,by=0.2)
     # lambda.XY = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxyTrain, learningbinary=1, TFcontinuous=F)
     lambda.XY = mylambda
     model.xy.RW = learnXG(inVar = data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)),labelval = IxyTrain, regval = lambda.XY, binommode = 1)
@@ -263,7 +168,7 @@ DREstimator = function(OBS,mismode,seednum){
                      Compute_Yx(DATA_Eval, DATA_Train , trainedlist2, yfix, xfix),
                      na.rm=T)
     # YxDR[idx] = mean(Compute_Yx(DATA, DATA, trainedlist3, yfix, xfix),
-    #                  Compute_Yx(DATA, DATA , trainedlist3, yfix, xfix), 
+    #                  Compute_Yx(DATA, DATA , trainedlist3, yfix, xfix),
     #                  na.rm=T)
     YxDR[idx] = max(YxDR[idx],0)
     YxDR[idx] = min(YxDR[idx],1)

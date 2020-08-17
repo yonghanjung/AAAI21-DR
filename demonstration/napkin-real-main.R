@@ -60,7 +60,8 @@ mismode = as.numeric(args[1])
 
 seednum = sample(1:10000000,1)
 # seednum = 4536437
-N = as.numeric(args[2]); Nmax = 1000
+N = as.numeric(args[2])
+Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
 DATA = tmp[[1]]
 OBS.Large = tmp[[2]]
