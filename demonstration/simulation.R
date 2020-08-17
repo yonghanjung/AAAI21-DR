@@ -32,6 +32,9 @@ library(tictoc)
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 10 500 1 2 '0816-1900' >log-napkinPractice-0816-1900.txt & 
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 10 500 1 2 '0816-1900' >log-planidPractice-0816-1900.txt & 
 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0816-2300' >log-napkin-0816-2300.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0816-2300' >log-planid-0816-2300.txt & 
+
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
   X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
