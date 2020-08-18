@@ -3,8 +3,9 @@ source('RID_functions.R')
 source('DRModule.R')
 
 WERMEstimator = function(OBS,mismode,seednum){
-  numRounds = 10 
+  numRounds = 20 
   maxDepth = 20
+  myverbose = F
   
   X1 = OBS[,1] 
   Z = OBS[,2] 
@@ -210,13 +211,21 @@ WERMEstimator = function(OBS,mismode,seednum){
     inVarTrain = data.frame(R=RTrain,X2=X2Train)
     inVarEval = data.frame(R=DATA_Eval$R,X2=DATA_Eval$X2)
     
+    # xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Iy.Train,weight =learned_W)
+    # modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2, objective = "binary:logistic")
+    
     # Learn P^{SW_Y}(y|r,x2)
     Ybox = rep(0,nrow(DATA_Eval))
     bootstrap_iter = 1
     for (idx in 1:bootstrap_iter){
-      sampled_df = WERM_Sampler(DATA_Train,SW_Y)
+      # sampled_df = WERM_Sampler(DATA_Train,SW_Y)
       # Learn Pw(y|r,x2)
-      model.weighted.Y.rx2 = learnXG(inVar = data.matrix(inVarTrain),labelval = Iy.Train, regval = mylambda, binommode = 1)
+      
+      xgbMatrix = xgb.DMatrix(data.matrix(inVarTrain), label=Iy.Train,weight = SW_Y)
+      model.weighted.Y.rx2 = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2)
+      
+      # model.weighted.Y.rx2 = learnXG(inVar = data.matrix(inVarTrain),labelval = Iy.Train, regval = mylambda, binommode = 1)
+      # model.weighted.Y.rx2 = xgboost(verbose=0, data=data.matrix(inVarTrain), label = Iy.Train, nrounds = numRounds,max.depth=maxDepth,lambda=mylambda,alpha=mylambda/2,objective = "binary:logistic",weight = SW_Y)
       pred.weighted.Y.rx2 = predict(model.weighted.Y.rx2, newdata = data.matrix(inVarEval),type='response')
       Prob.weighted.Y.rx2 = DATA_Eval$Y*pred.weighted.Y.rx2 + (1-DATA_Eval$Y)*(1-pred.weighted.Y.rx2)
       Ybox = Ybox + Prob.weighted.Y.rx2
@@ -254,6 +263,12 @@ WERMEstimator = function(OBS,mismode,seednum){
     if (length(pred.SW[pred.SW < 0 ]) > 0){
       pred.SW[pred.SW < 0 ] = runif(n=length(pred.SW[pred.SW < 0 ]),min=0,max=min(abs(pred.SW)))  
     }
+    if (mismode == 2){
+      distortval = 1
+      sign_rv = 2*rbinom(n=length(pred.SW),size=1,prob=0.5)-1
+      pred.SW = pred.SW + sign_rv*rnorm(length(pred.SW),distortval,1)
+      pred.SW[pred.SW <= 0] = runif(n=length(pred.SW[pred.SW <= 0]),min=0.5,max=max(pred.SW))
+    }
     return(pred.SW)
   }
   
@@ -276,11 +291,11 @@ WERMEstimator = function(OBS,mismode,seednum){
     inVar_train=data.frame(X1=X1Train,X2=X2Train)
     inVar_eval=data.frame(X1=rep(x1val,nrow(DATA_Eval)),X2=rep(x2val,nrow(DATA_Eval)))
     
-    xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Iy.Train)
-    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2, objective = "binary:logistic", weight = learned_W)
+    xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Iy.Train, weight =learned_W)
+    modelY_xgboost = xgboost(weight = learned_W,verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2)
     
     predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
-    Yx = mean(predY)
+    Yx = mean(predY,na.rm=T)
     return(Yx)    
   }
  
@@ -309,25 +324,32 @@ WERMEstimator = function(OBS,mismode,seednum){
   prob.Y.2 = RunTryCatchProb_WERM(Train.P.Y,DATA_Train,DATA_Eval,mylambda) 
   prob.Y = (prob.Y.1 + prob.Y.2)/2
   
+  
   prob.R.X1.1 = Train.P.R.X1(DATA_Train,DATA_Eval,mylambda)
   prob.R.X1.2 = RunTryCatchProb_WERM(Train.P.R.X1,DATA_Train,DATA_Eval,mylambda) 
   prob.R.X1 = (prob.R.X1.1 + prob.R.X1.2)/2
+  
   
   prob.X2.X1Z.1 = Train.P.X2.X1Z(DATA_Train,DATA_Eval,mylambda)
   prob.X2.X1Z.2 = RunTryCatchProb_WERM(Train.P.X2.X1Z,DATA_Train,DATA_Eval,mylambda) 
   prob.X2.X1Z = (prob.R.X1.1 + prob.R.X1.2)/2
   
+  
   prob.R.1 = Train.P.R(DATA_Train,DATA_Eval,mylambda)
   prob.R.2 = RunTryCatchProb_WERM(Train.P.R,DATA_Train,DATA_Eval,mylambda) 
   prob.R = (prob.R.1 + prob.R.2)/2
+  
+  
   
   prob.X2.1 = Train.P.X2(DATA_Train,DATA_Eval,mylambda)
   prob.X2.2 = RunTryCatchProb_WERM(Train.P.X2,DATA_Train,DATA_Eval,mylambda) 
   prob.X2 = (prob.X2.1+prob.X2.2)/2
   
+  
   prob.R.X2X1Z.1 = Train.P.R.X2X1Z(DATA_Train,DATA_Eval,mylambda)
   prob.R.X2X1Z.2 = RunTryCatchProb_WERM(Train.P.R.X2X1Z,DATA_Train,DATA_Eval,mylambda) 
   prob.R.X2X1Z = (prob.R.X2X1Z.1+prob.R.X2X1Z.2)/2
+  
   
   # Weight SW_Y  
   SW_Y = (prob.R * prob.X2)/(prob.R.X1 * prob.X2.X1Z)
@@ -336,12 +358,27 @@ WERMEstimator = function(OBS,mismode,seednum){
   Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Eval,DATA_Train,mylambda,SW_Y)
   Prob.weighted.Y.rx2 = (Prob.weighted.Y.rx2.1+Prob.weighted.Y.rx2.2)/2
   
-  # SW_importance_sampling = (Prob.weighted.Y.rx2*prob.R.X1)/(prob.Y*prob.R.X2X1Z)
-  SW_importance_sampling = (Prob.weighted.Y.rx2*prob.R.X1)/(prob.Y*prob.R.X2X1Z)
+  SW_importance_sampling = (Prob.weighted.Y.rx2)/(prob.Y)
+  # SW_importance_sampling = (Prob.weighted.Y.rx2)/(prob.Y)
+  # if (mismode == 2){
+  #   SW_importance_sampling = 2*SW_importance_sampling 
+  # }
   # SW.1 = Train.SW(DATA_Train, DATA_Eval, mylambda,SW_importance_sampling)
   # SW.2 = Train.SW(DATA_Eval, DATA_Train, mylambda,SW_importance_sampling)
-  # learned_W = (SW.1 + SW.2)/2
+  # learned_W = SW.1
   learned_W = SW_importance_sampling
+  if (myverbose){
+    print(paste(mismode,"prob.Y",round(mean(prob.Y,na.rm=T),4),sep="-"))
+    print(paste(mismode,"prob.R.X1",round(mean(prob.R.X1,na.rm=T),4),sep="-"))
+    print(paste(mismode,"prob.X2.X1Z",round(mean(prob.X2.X1Z,na.rm=T),4),sep="-"))
+    print(paste(mismode,"prob.R",round(mean(prob.R,na.rm=T),4),sep="-"))
+    print(paste(mismode,"prob.X2",round(mean(prob.X2,na.rm=T),4),sep="-"))
+    print(paste(mismode,"prob.R.X2X1Z",round(mean(prob.R.X2X1Z,na.rm=T),4),sep="-"))
+    print(paste(mismode,"SW_Y",round(mean(SW_Y,na.rm=T),4),sep="-"))
+    print(paste(mismode,"Prob.weighted.Y.rx2",round(mean(Prob.weighted.Y.rx2,na.rm=T),4),sep="-"))
+    print(paste(mismode,"SW_importance_sampling",round(mean(SW_importance_sampling,na.rm=T),4),sep="-"))
+    print(paste(mismode,"learned_W",round(mean(learned_W,na.rm=T),4),sep="-"))
+  }
   
   YxWERM = rep(0,length(X1unique)*length(X2unique))
   idx = 1

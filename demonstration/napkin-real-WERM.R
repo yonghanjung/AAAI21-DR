@@ -69,8 +69,8 @@ WERMEstimator = function(OBS,mismode,seednum){
     inVar_train=data.frame(X=Xtrain,R=Rtrain)
     inVar_eval=data.frame(X=rep(xval,nrow(DATA_Eval)),R=DATA_Eval$R)
     
-    xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=IyTrain)
-    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2, objective = "binary:logistic", weight = learned_W)
+    xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=IyTrain, weight = learned_W)
+    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2, objective = "binary:logistic")
     
     predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
     Yx = mean(predY)

@@ -59,9 +59,9 @@ seednum = sample(1:10000000,1)
 # seednum = 4536437
 N = as.numeric(args[2])
 
-seednum = 9281412
-mismode = 2 
-N = 11500
+# seednum = 123
+mismode = 0
+N = 10000
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
@@ -71,6 +71,15 @@ OBS = tmp[[3]]
 
 # tic(); answer.plugin = BDEstimator(DATA); toc(); print('Done: Answer 0')
 tic(); answer = BDNaiveEstimator(DATA); toc(); print('Done: Answer')
+
+Xunique = unique(OBS.Large$X)[order(unique(OBS.Large$X))]
+proportion_X = rep(0,length(Xunique)); idx = 1
+for (xval in Xunique){
+    proportion_X[idx] = nrow(subset(OBS.Large,X==xval))/nrow(OBS.Large)
+    idx = idx + 1 
+}
+proportion_X = round(proportion_X,4)
+
 
 tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print('Done: PIanswer')
 tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print('Done: DRanswer')

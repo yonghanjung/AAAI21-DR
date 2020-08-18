@@ -14,7 +14,7 @@ library(arm)
 library(mgcv)
 library(mise)
 
-numRounds = 10 
+numRounds = 20 
 maxDepth = 20
 
 learnXG = function(inVar,labelval,regval,binommode){

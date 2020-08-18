@@ -2,6 +2,12 @@ source('RID_functions.R')
 source('WERM_Heuristic.R')
 source('DRModule.R')
 
+mydivDR = function(a,b){
+  resultvector = a/b 
+  resultvector[is.na(resultvector)] = 0
+  return(resultvector)
+}
+
 DREstimator = function(OBS,mismode,seednum){
   set.seed(seednum)
   X1 = OBS[,1] 
@@ -46,7 +52,7 @@ DREstimator = function(OBS,mismode,seednum){
     Iy = (DATA$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)
-    regvallist = seq(0,10,by=0.2)
+    # regvallist = seq(0,10,by=0.2)
     # lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
     lambda.Y = mylambda
     # lambda.Y = rep(0,nrow(DATA_Train))
@@ -84,10 +90,39 @@ DREstimator = function(OBS,mismode,seednum){
     # mylist = TrainModel(DATA_Train,DATA_Eval)
     model.Y = trainedlist[[1]]; model.X2.ZX1 = trainedlist[[2]]; model.R.X1 = trainedlist[[3]]; model.X1 = trainedlist[[4]]
     
+    # ### TOY
+    # # yvalfix = 1 
+    # Iy.Train = (DATA_Train$Y==yvalfix)*1  
+    # X2train = DATA_Train$X2
+    # Rtrain = DATA_Train$R 
+    # Ztrain = DATA_Train$Z 
+    # X1train = DATA_Train$X1 
+    # 
+    # if (mismode == 1){
+    #   Iy.Train = distortVar(Iy.Train,seednum)
+    #   # X1train = distortVar(X1train,seednum)
+    #   # Ztrain = distortVar(Ztrain,seednum)
+    #   # Rtrain = distortVar(Rtrain,seednum)
+    # }
+    # if (mismode == 2){
+    #   Rtrain = distortVar(Rtrain,seednum)
+    #   X2train = distortVar(X2train,seednum)
+    # }
+    # 
+    # Ix2 = DATA_Train$x2
+    # labelval.x2r.X1Z = 
+    # model.x2r.X1Z = 
+    #   learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z, R=DATA_Train$R, X2=DATA_Train$X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
+    # ### TOY
+    
     # Learn P(y | r,x2,X1,Z)
     pred.Y.rx2.X1Z = predict(model.Y, 
                              newdata=data.matrix(data.frame(X1=DATA_Eval$X1, Z=DATA_Eval$Z, R=rep(rvalfix,nrow(DATA_Eval)),X2=rep(x2valfix,nrow(DATA_Eval)))),
                              type='response')
+    
+    # pred.Y.rx2.X1Z = predict(model.Y, 
+    #                          newdata=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=rep(rvalfix,nrow(DATA)),X2=rep(x2valfix,nrow(DATA)))),
+    #                          type='response')
     # prob.Y.rx2.X1Z = mapply(function(idx, yiter){
     #   return(pred.Y.rx2.X1Z[idx]*yiter + (1-pred.Y.rx2.X1Z[idx])*(1-yiter))
     # },c(1:nrow(DATA_Eval)),DATA_Eval$Y)
@@ -126,12 +161,27 @@ DREstimator = function(OBS,mismode,seednum){
       pred.X2.ZX1[idx,(x2val+1)]
     },c(1:nrow(DATA_Eval)),rep(x2valfix,nrow(DATA_Eval)))
     
+    # Learn P(X2)
+    prob.X2 = mapply(function(idx,x2val){
+      (sum(DATA_Eval$X2==x2val))/nrow(DATA_Eval)
+    },c(1:nrow(DATA_Eval)),DATA_Eval$X2)
+    # Learn P(R)
+    prob.R = mapply(function(idx,rval){
+      (sum(DATA_Eval$R==rval))/nrow(DATA_Eval)
+    },c(1:nrow(DATA_Eval)),DATA_Eval$R)
+    
     # if (mismode == 2){
     #   prob.X2.ZX1 = mis_pred(prob.X2.ZX1)
     #   prob.x2.ZX1 = mis_pred(prob.x2.ZX1)
     # }
+
     
-    UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
+    # UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
+    myweightval = ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
+    myweightval2 = ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))
+    UIF_M1 = pred.Y.rx2.X1Z + myweightval
+    # UIF_M1 = pred.Y.rx2.X1Z + mydivDR(myweightval,myweightval2)
+    # UIF_M1 = pred.Y.rx2.X1Z + ((prob.X2*prob.R*Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
     # UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
     # EIF_M1 = UIF_M1 - mean(UIF_M1)
     return(UIF_M1)
@@ -184,25 +234,33 @@ DREstimator = function(OBS,mismode,seednum){
     # model.Y = mylist[[1]]; model.X2.ZX1 = mylist[[2]]; model.R.X1 = mylist[[3]]; pred.R.X1 = mylist[[4]]
     
     UIF = rep(0,nrow(DATA_Eval))
+    myverbose = F 
     for (rvalfix in Runique){
-      # print(rvalfix)
+      
       UIF_M1 = compute_UIF_M1(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, 
                               trainedlist=trainedlist, 
                               yval=yvalfix, rvalfix=rvalfix, x2valfix=x2valfix)
-      # print(mean(UIF_M1))
       EIF_M1 = UIF_M1 - mean(UIF_M1,na.rm=T)
       
       UIF_M2 = compute_UIF_M2(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, 
                               trainedlist=trainedlist, 
                               x1valfix=x1valfix, rvalfix=rvalfix)
-      # print(mean(UIF_M2))
       EIF_M2 = UIF_M2 - mean(UIF_M2,na.rm=T)
       sumArray = (UIF_M1*mean(UIF_M2,na.rm=T) + EIF_M2*mean(UIF_M1,na.rm=T))
       # sumArray = (EIF_M1*mean(UIF_M2,na.rm=T) + UIF_M2*mean(UIF_M1,na.rm=T))
-      # print(mean(sumArray,na.rm=T))
+      
       UIF = UIF + sumArray
+      if (myverbose){
+        print(rvalfix)
+        print(mean(UIF_M1))
+        print(mean(UIF_M2))
+        print(mean(sumArray,na.rm=T))
+      }
     }
-    # print(mean(UIF))
+    if(myverbose){
+      print(mean(UIF,na.rm=T))  
+    }
+    
     return(mean(UIF,na.rm=T))
   }
   
@@ -224,7 +282,20 @@ DREstimator = function(OBS,mismode,seednum){
   # DATA_Eval = DATA
   
   trainedlist1 = TrainModel(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, DATA=DATA, mismode = mismode)
-  trainedlist2 = TrainModel(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, DATA=DATA, mismode = mismode)
+  
+  tryCatch(
+    expr = {
+      trainedlist2 = TrainModel(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, DATA=DATA, mismode = mismode)
+    },
+    error = function(e){
+      print("Error in the Function")
+    },
+    finally = {
+      trainedlist2 = TrainModel(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, DATA=DATA, mismode = mismode)
+    }
+  )
+  
+  # trainedlist2 = TrainModel(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, DATA=DATA, mismode = mismode)
   # trainedlist = trainedlist1
   # trainedlist3 = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
   # trainedlist = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
@@ -233,8 +304,9 @@ DREstimator = function(OBS,mismode,seednum){
   idx = 1 
   for (x1valfix in X1unique){
     for (x2valfix in X2unique){
-      Yx[idx] = mean(compute_Yx(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, trainedlist = trainedlist1, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix),
-                     compute_Yx(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, trainedlist = trainedlist2, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix))
+      result1 = compute_Yx(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, trainedlist = trainedlist1, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix)
+      result2 = compute_Yx(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, trainedlist = trainedlist2, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix)
+      Yx[idx] = (result1 + result2)/2
       # Yx[idx] = compute_Yx(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, trainedlist = trainedlist1, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix)
       # Yx[idx] = compute_Yx(DATA_Train=DATA, DATA_Eval=DATA, trainedlist = trainedlist, yvalfix=yvalfix,x1valfix=x1valfix,x2valfix=x2valfix)
       Yx[idx] = max(Yx[idx],0)

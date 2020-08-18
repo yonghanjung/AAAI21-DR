@@ -49,7 +49,7 @@ ResultingPerformanceTable = function(PIanswer,DRanswer,WERManswer,answer,OBS){
 
   tmp_mat = matrix(round(c(performance_PI,performance_DR,performance_WERM),3),ncol=3)
   colnames(tmp_mat) = c('Plug-in','DR','WERM')
-  rownames(tmp_mat) = 'Error'
+  rownames(tmp_mat) = 'Error (weight)'
   return(tmp_mat)
   # print(paste("Mismode:",mismode))
   # print(tmp_mat)
@@ -64,7 +64,7 @@ ResultingPerformanceTable_Absolute = function(PIanswer,DRanswer,WERManswer,answe
 
   tmp_mat = matrix(round(c(performance_PI,performance_DR,performance_WERM),3),ncol=3)
   colnames(tmp_mat) = c('Plug-in','DR','WERM')
-  rownames(tmp_mat) = 'Error'
+  rownames(tmp_mat) = 'Error (abs)'
   return(tmp_mat)
   # print(paste("Mismode:",mismode))
   # print(tmp_mat)
@@ -78,9 +78,10 @@ seednum = sample(1:10000000,1)
 # seednum = 4536437
 N = as.numeric(args[2])
 
-# seednum = 3827325
-mismode = 2
-N = 15000
+# seednum = 12356
+print(seednum)
+mismode = 0
+N = 10000
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
@@ -89,12 +90,26 @@ OBS.Large = tmp[[2]]
 OBS = tmp[[3]]
 
 answer = BDNaiveEstimator(DATA)
+
+X1unique = unique(OBS.Large$X1)[order(unique(OBS.Large$X1))]
+X2unique = unique(OBS.Large$X2)[order(unique(OBS.Large$X2))]
+proportion_X = rep(0,length(X1unique)*length(X2unique)); idx = 1
+for (x1val in X1unique){
+  for (x2val in X2unique){
+    proportion_X[idx] = nrow(subset(OBS.Large,X1==x1val & X2==x2val))/nrow(OBS.Large)
+    idx = idx + 1 
+  }
+}
+proportion_X = round(proportion_X,4)
+
 # answer = BDEstimator(DATA)
 
 
 tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print("PI done")
 # PIanswer.Large = PlugInEstimator(OBS.Large,mismode,seednum)
-tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print("DR done")
+suppressMessages(source('planid-real-DR.R'))
+# tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print("DR done")
+tic(); DRanswer = PIanswer; toc(); print("DR done")
 # DRanswer.Large = DREstimator(OBS.Large,mismode,seednum)
 tic(); WERManswer = WERMEstimator(OBS,mismode,seednum); toc();  print("WERM done")
 # WERManswer = rep(0.5,length(PIanswer))
