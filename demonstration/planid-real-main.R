@@ -1,6 +1,6 @@
 library(mise)
 library(tictoc)
-mise()
+# mise()
 
 suppressMessages(source('planid-real-data.R'))
 # suppressMessages(source('planid-real-naive.R'))
@@ -42,46 +42,70 @@ computePerformanceAbsolute = function(OBS,answer,prediction){
   # return(sum(abs(answer-prediction)*proportion_X))
 }
 
-ResultingPerformanceTable = function(PIanswer,DRanswer,WERManswer,answer,OBS){
-  performance_PI = computePerformance(OBS,answer,PIanswer)
-  performance_DR = computePerformance(OBS,answer,DRanswer)
-  performance_WERM = computePerformance(OBS,answer,WERManswer)
-
-  tmp_mat = matrix(round(c(performance_PI,performance_DR,performance_WERM),3),ncol=3)
-  colnames(tmp_mat) = c('Plug-in','DR','WERM')
-  rownames(tmp_mat) = 'Error (weight)'
-  return(tmp_mat)
-  # print(paste("Mismode:",mismode))
-  # print(tmp_mat)
-
-  # print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
-}
-
 ResultingPerformanceTable_Absolute = function(PIanswer,DRanswer,WERManswer,answer,OBS){
-  performance_PI = computePerformanceAbsolute(OBS,answer,PIanswer)
-  performance_DR = computePerformanceAbsolute(OBS,answer,DRanswer)
-  performance_WERM = computePerformanceAbsolute(OBS,answer,WERManswer)
-
-  tmp_mat = matrix(round(c(performance_PI,performance_DR,performance_WERM),3),ncol=3)
+  finalperformance = c()
+  for (mismode in c(0,1,2)){
+    performance_PI = computePerformanceAbsolute(OBS,answer,get(paste("PIanswer.",mismode,sep="")))
+    performance_DR = computePerformanceAbsolute(OBS,answer,get(paste("DRanswer.",mismode,sep="")))
+    performance_WERM = computePerformanceAbsolute(OBS,answer,get(paste("WERManswer.",mismode,sep="")))
+    myresult = c(performance_PI,performance_DR,performance_WERM)
+    finalperformance = rbind(finalperformance,myresult)
+  }
+  tmp_mat = matrix(round(finalperformance,3),ncol=3)
   colnames(tmp_mat) = c('Plug-in','DR','WERM')
-  rownames(tmp_mat) = 'Error (abs)'
+  rownames(tmp_mat) = c('(abs) mis0','(abs) mis1','(abs) mis2')
+  
+  winner_array = c()
+  for (mismode in c(0,1,2)){
+    winner_name = colnames(tmp_mat)[which.min(tmp_mat[(mismode+1),])]
+    winner_array = c(winner_array,winner_name)
+  }
+  tmp_mat = cbind(tmp_mat,winner_array)
+  colnames(tmp_mat)[ncol(tmp_mat)] = "Winner"
+  
+  return(tmp_mat)
+}
+
+ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,WERManswer,answer,OBS){
+  finalperformance = c()
+  for (mismode in c(0,1,2)){
+    performance_PI = computePerformance(OBS,answer,get(paste("PIanswer.",mismode,sep="")))
+    performance_DR = computePerformance(OBS,answer,get(paste("DRanswer.",mismode,sep="")))
+    performance_WERM = computePerformance(OBS,answer,get(paste("WERManswer.",mismode,sep="")))
+    myresult = c(performance_PI,performance_DR,performance_WERM)
+    finalperformance = rbind(finalperformance,myresult)
+  }
+  tmp_mat = matrix(round(finalperformance,3),ncol=3)
+  colnames(tmp_mat) = c('Plug-in','DR','WERM')
+  rownames(tmp_mat) = c('(weight) mis0','(weight) mis1','(weight) mis2')
+  
+  winner_array = c()
+  for (mismode in c(0,1,2)){
+    winner_name = colnames(tmp_mat)[which.min(tmp_mat[(mismode+1),])]
+    winner_array = c(winner_array,winner_name)
+  }
+  tmp_mat = cbind(tmp_mat,winner_array)
+  colnames(tmp_mat)[ncol(tmp_mat)] = "Winner"
+  
   return(tmp_mat)
   # print(paste("Mismode:",mismode))
   # print(tmp_mat)
-
+  
   # print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
 }
 
-mismode = as.numeric(args[1])
+
+# mismode = as.numeric(args[1])
 
 seednum = sample(1:10000000,1)
+print(seednum)
 # seednum = 4536437
-N = as.numeric(args[2])
+N = as.numeric(args[1])
 
 # seednum = 12356
-print(seednum)
-mismode = 0
-N = 10000
+
+# mismode = 0
+# N = 10000
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
@@ -105,23 +129,25 @@ proportion_X = round(proportion_X,4)
 # answer = BDEstimator(DATA)
 
 
-tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print("PI done")
-# PIanswer.Large = PlugInEstimator(OBS.Large,mismode,seednum)
-suppressMessages(source('planid-real-DR.R'))
-# tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print("DR done")
-tic(); DRanswer = PIanswer; toc(); print("DR done")
-# DRanswer.Large = DREstimator(OBS.Large,mismode,seednum)
-tic(); WERManswer = WERMEstimator(OBS,mismode,seednum); toc();  print("WERM done")
-# WERManswer = rep(0.5,length(PIanswer))
+for (mismode in c(0,1,2)){
+  tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print('Done: PIanswer')
+  tic(); DRanswer = DREstimator(OBS,mismode,seednum); toc(); print('Done: DRanswer')
+  tic(); WERManswer = WERMEstimator(OBS,mismode,seednum); toc(); print('Done: WERManswer')  
+  
+  assign(paste("PIanswer.",mismode,sep=""),PIanswer)
+  assign(paste("DRanswer.",mismode,sep=""),DRanswer)
+  assign(paste("WERManswer.",mismode,sep=""),WERManswer)
+}
+PIanswer = c(PIanswer.0,PIanswer.1,PIanswer.2)
+DRanswer = c(DRanswer.0,DRanswer.1,DRanswer.2)
+WERManswer = c(WERManswer.0,WERManswer.1,WERManswer.2)
 
-print("answer: naive weighted")
-tmp_mat = ResultingPerformanceTable(PIanswer,DRanswer,WERManswer,answer,OBS)
+# asBDanswer = asBDEstimator(OBS,mismode,seednum)
+
+print("answer: Weighted")
+tmp_mat = ResultingPerformanceTable_Weight(PIanswer,DRanswer,WERManswer,answer,OBS)
 print(tmp_mat)
-print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
 
-print("answer: naive Abs")
+print("answer: Absolute")
 tmp_mat = ResultingPerformanceTable_Absolute(PIanswer,DRanswer,WERManswer,answer,OBS)
 print(tmp_mat)
-print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
-
-
