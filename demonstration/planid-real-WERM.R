@@ -253,12 +253,12 @@ WERMEstimator = function(OBS,mismode,seednum){
   tmp = GoodSplit(DATA)
   DATA_Train = tmp[[1]]
   DATA_Eval = tmp[[2]]
-  if (nrow(DATA_Train) < nrow(DATA_Eval)){
-    DATA_Eval = DATA_Eval[c(1:nrow(DATA_Train)),]
-  }
-  if (nrow(DATA_Eval) < nrow(DATA_Train)){
-    DATA_Train = DATA_Train[c(1:nrow(DATA_Eval)),]
-  }
+  # if (nrow(DATA_Train) < nrow(DATA_Eval)){
+  #   DATA_Eval = DATA_Eval[c(1:nrow(DATA_Train)),]
+  # }
+  # if (nrow(DATA_Eval) < nrow(DATA_Train)){
+  #   DATA_Train = DATA_Train[c(1:nrow(DATA_Eval)),]
+  # }
    
   
   mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)

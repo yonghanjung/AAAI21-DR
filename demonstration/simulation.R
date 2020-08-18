@@ -35,8 +35,8 @@ library(tictoc)
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0816-2300' >log-napkin-0816-2300.txt & 
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0816-2300' >log-planid-0816-2300.txt &
 
-## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0817-1730' >log-napkin-0817-1730.txt &
-## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0817-1730' >log-planid-0817-1730.txt & 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0817-2200' >log-napkin-0817-2200.txt &
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0817-1830' >log-planid-0817-1830.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -78,12 +78,12 @@ nidx.end = as.numeric(args[5]) # 20
 filedate = args[6] # 0811-1800
 
 ### Example
-probleminstance = 'napkin'
-simRound = 10
-NumUnit = 500
-nidx.start = 1
-nidx.end = 2
-filedate = "1817tmp"
+# probleminstance = 'napkin'
+# simRound = 10
+# NumUnit = 500
+# nidx.start = 1
+# nidx.end = 2
+# filedate = "1817tmp"
 ####
 
 Nlist = c(nidx.start:nidx.end)*NumUnit

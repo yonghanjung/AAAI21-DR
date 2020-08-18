@@ -59,8 +59,9 @@ seednum = sample(1:10000000,1)
 # seednum = 4536437
 N = as.numeric(args[2])
 
-mismode = 0 
-N = 10000
+seednum = 9281412
+mismode = 2 
+N = 11500
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)

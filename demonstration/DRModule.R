@@ -101,6 +101,12 @@ GoodSplit = function(OBS){
   }
   rownames(OBS_1) = c(1:nrow(OBS_1))
   rownames(OBS_2) = c(1:nrow(OBS_2))
+  if (nrow(OBS_1) < nrow(OBS_2)){
+    OBS_2 = OBS_2[c(1:nrow(OBS_1)),]
+  }
+  if (nrow(OBS_2) < nrow(OBS_1)){
+    OBS_1 = OBS_2[c(1:nrow(OBS_2)),]
+  }
   return(list(OBS_1,OBS_2))
 }
 
