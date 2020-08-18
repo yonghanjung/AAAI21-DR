@@ -7,8 +7,14 @@ PlugInEstimator = function(OBS,mismode,seednum){
   ## Compute P(y|x1,z,r,x2)
   Expect.Y = function(myallpossible,DATA,mylambda){
     IyTrain = (DATA$Y == yvalfix)*1
+    X2Train = DATA$X2
+    Rtrain = DATA$R
     if (mismode == 1){
       IyTrain = distortVar(IyTrain,seednum)
+    }
+    if (mismode == 2){
+      Rtrain = distortVar(Rtrain,seednum)
+      X2Train = distortVar(X2Train,seednum)
     }
     modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,mylambda,binommode = 1)
     evalMat = as.matrix(myallpossible[,c('X1','Z','R','X2')])
@@ -54,6 +60,9 @@ PlugInEstimator = function(OBS,mismode,seednum){
       rval = myallpossible$R[idx]
       probR[idx] = predval[idx,(rval+1)]
     }
+    # if (mismode == 2){
+    #   probR = mis_pred(probR)
+    # }
     newcol = (ncol(myallpossible)+1)
     myallpossible[,newcol] = probR
     colnames(myallpossible)[ncol(myallpossible)] = 'prob'

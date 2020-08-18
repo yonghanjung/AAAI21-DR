@@ -143,7 +143,7 @@ ConstructDrawGG = function(instancename,mismode,lossname,ylimits,mean_median){
   gg = gg + geom_point(data=df.result,aes(x=Nlist,y=DR.50,colour='DR.50'),size=point_size,alpha=alpha_point,shape=16)
   gg = gg + geom_point(data=df.result,aes(x=Nlist,y=WERM.50,colour='WERM.50'),size=point_size,alpha=alpha_point,shape=9)
 
-  gg = gg + scale_color_manual("",breaks=c("DR.50","PlugIn.50","WERM.50"),values = c("blue", "firebrick2","orange"),labels=c("DR-R","Plug-In","WERM"))
+  gg = gg + scale_color_manual("",breaks=c("DR.50","PlugIn.50","WERM.50"),values = c("blue", "firebrick2","orange"),labels=c("DR","Plug-In","WERM"))
   
   # gg = gg + ggtitle(Dtitle) 
   gg = gg + coord_cartesian(ylim=ylimits)
@@ -224,7 +224,10 @@ ConstructMultipleGG = function(instancename,lossname,ylimits,box_ylimit,mean_med
 
 # instancename = "Result/napkin-0816-2300"; mismode = 0; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
 # instancename = "Result/planid-0816-2300"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
-instancename = "Result/napkin-1817tmp"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+# instancename = "Result/napkin-1817tmp"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+instancename = "Result/planid-0817-1830"; lossname = "weight"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
+# instancename = "Result/napkin-0817-2200"; lossname = "abs"; ylimits=c(0,0.05); boxlimits = c(0,0.5)
+
 # df.result = ConstructDFPlot(instancename,mismode,lossname,'mean')
 # gg = ConstructDrawGG(instancename,mismode,lossname,ylimits,'mean')
 gg = ConstructMultipleGG(instancename,lossname,ylimits,boxlimits,'mean')

@@ -42,7 +42,7 @@ DREstimator = function(OBS,mismode,seednum){
     }
     # 
     # # Iy.Test = (DATA_Eval$Y==yvalfix)*1
-    mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA))
+    mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
     Iy = (DATA$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)
@@ -112,7 +112,8 @@ DREstimator = function(OBS,mismode,seednum){
     },c(1:nrow(DATA_Eval)),rep(rvalfix,nrow(DATA_Eval)))
     
     # if (mismode == 2){
-    #   prob.R.X1 = fix_pred(mis_pred(prob.R.X1))
+    #   prob.R.X1 = mis_pred(prob.R.X1)
+    #   prob.r.X1 = mis_pred(prob.r.X1)
     # }
     
     # Learn P(X2 | Z,X1)
@@ -126,8 +127,8 @@ DREstimator = function(OBS,mismode,seednum){
     },c(1:nrow(DATA_Eval)),rep(x2valfix,nrow(DATA_Eval)))
     
     # if (mismode == 2){
-    #   prob.X2.ZX1 = fix_pred(mis_pred(prob.X2.ZX1))
-    #   prob.x2.ZX1 = fix_pred(mis_pred(prob.x2.ZX1))
+    #   prob.X2.ZX1 = mis_pred(prob.X2.ZX1)
+    #   prob.x2.ZX1 = mis_pred(prob.x2.ZX1)
     # }
     
     UIF_M1 = pred.Y.rx2.X1Z + ((Ir*Ix2)/(prob.X2.ZX1*prob.R.X1))*(Iy - pred.Y.RX2.X1Z)
@@ -164,8 +165,8 @@ DREstimator = function(OBS,mismode,seednum){
     prob.r.x1 = rep(predict(model.R.X1,newdata = data.matrix(data.frame(X1=x1valfix)),reshape=TRUE)[rvalfix+1],nrow(DATA_Eval))
     
     # if (mismode == 2){
-    #   prob.r.X1 = fix_pred(mis_pred(prob.r.X1))
-    #   prob.r.x1 = fix_pred(mis_pred(prob.r.x1))
+    #   prob.r.X1 = mis_pred(prob.r.X1)
+    #   prob.r.x1 = mis_pred(prob.r.x1)
     # }
     
     UIF_M2 = ((Ix1/prob.x1)*(Ir-prob.r.X1))+prob.r.x1
@@ -184,20 +185,24 @@ DREstimator = function(OBS,mismode,seednum){
     
     UIF = rep(0,nrow(DATA_Eval))
     for (rvalfix in Runique){
+      # print(rvalfix)
       UIF_M1 = compute_UIF_M1(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, 
                               trainedlist=trainedlist, 
                               yval=yvalfix, rvalfix=rvalfix, x2valfix=x2valfix)
+      # print(mean(UIF_M1))
       EIF_M1 = UIF_M1 - mean(UIF_M1,na.rm=T)
       
       UIF_M2 = compute_UIF_M2(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, 
                               trainedlist=trainedlist, 
                               x1valfix=x1valfix, rvalfix=rvalfix)
+      # print(mean(UIF_M2))
       EIF_M2 = UIF_M2 - mean(UIF_M2,na.rm=T)
       sumArray = (UIF_M1*mean(UIF_M2,na.rm=T) + EIF_M2*mean(UIF_M1,na.rm=T))
       # sumArray = (EIF_M1*mean(UIF_M2,na.rm=T) + UIF_M2*mean(UIF_M1,na.rm=T))
       # print(mean(sumArray,na.rm=T))
       UIF = UIF + sumArray
     }
+    # print(mean(UIF))
     return(mean(UIF,na.rm=T))
   }
   
@@ -210,11 +215,11 @@ DREstimator = function(OBS,mismode,seednum){
   tmp = GoodSplit(DATA)
   DATA_Train = tmp[[1]]
   DATA_Eval = tmp[[2]]
-  if (identical(returnUnique(DATA_Train),returnUnique(DATA_Eval)) == F){
-    print(c("ho",seednum))
-    DATA_Train = DATA
-    DATA_Eval = DATA 
-  }
+  # if (identical(returnUnique(DATA_Train),returnUnique(DATA_Eval)) == F){
+  #   print(c("ho",seednum))
+  #   DATA_Train = DATA
+  #   DATA_Eval = DATA 
+  # }
   # DATA_Train = DATA
   # DATA_Eval = DATA
   

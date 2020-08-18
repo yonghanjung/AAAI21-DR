@@ -1,9 +1,9 @@
 library(mise)
 library(tictoc)
-# mise()
+mise()
 
 suppressMessages(source('planid-real-data.R'))
-suppressMessages(source('planid-real-naive.R'))
+# suppressMessages(source('planid-real-naive.R'))
 suppressMessages(source('planid-real-plugin.R'))
 suppressMessages(source('planid-real-WERM.R'))
 suppressMessages(source('planid-real-DR.R'))
@@ -78,9 +78,9 @@ seednum = sample(1:10000000,1)
 # seednum = 4536437
 N = as.numeric(args[2])
 
-seednum = 3827325
+# seednum = 3827325
 mismode = 2
-N = 500
+N = 15000
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
@@ -89,6 +89,7 @@ OBS.Large = tmp[[2]]
 OBS = tmp[[3]]
 
 answer = BDNaiveEstimator(DATA)
+# answer = BDEstimator(DATA)
 
 
 tic(); PIanswer = PlugInEstimator(OBS,mismode,seednum); toc(); print("PI done")

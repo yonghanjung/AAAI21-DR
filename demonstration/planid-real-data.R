@@ -97,7 +97,7 @@ dataGen = function(seednum,N,Nmax){
   # Prob.S = matrix(runif(length(unique(Val1)) * length(unique(Val2)),min=0.5,max=1)
   #                           ,nrow = length(unique(Val1)),ncol = length(unique(Val2)) )
   
-  min_prob = 0.8
+  min_prob = 0.9
   Prob.S.PMB.VMCH = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$VMCH)),min=min_prob,max=1),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   # Prob.S.PMB.VMCH = matrix(c(0.75,0.85,0.6,0.82,0.76,0.53,0.7,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   
