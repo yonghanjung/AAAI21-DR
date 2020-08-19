@@ -12,10 +12,31 @@ mis_pred = function(predval){
   return(predval)
 }
 
+# distortVar = function(myvar,seednum){
+#   set.seed(seednum)
+#   while(1){
+#     numSample =  length(unique(myvar))
+#     numSize = length(myvar)
+#     myprob = c(runif(1,min=0,max=1))
+#     sumprob = myprob[1]
+#     for (idx in 1:(numSample-1)){
+#       lastprob = runif(1,min=0,max=(1-sumprob))
+#       myprob = c(myprob,lastprob)
+#       sumprob = sumprob + lastprob
+#     }
+#     myprob[length(myprob)] = 1-sum(myprob[1:(length(myprob)-1)])
+#     mySample = sample(x=c(0:(numSample-1)),size=numSize,replace=T,prob=myprob)
+#     if (length(unique(mySample)) == length(unique(myvar)) ){
+#       return(mySample)
+#     }
+#   }
+# }
+
+
 distortVar = function(myvar,seednum){
   set.seed(seednum)
   while(1){
-    mysample = sample(c(0:(length(unique(myvar))-1)),size=length(myvar),replace=T)  
+    mysample = sample(c(0:(length(unique(myvar))-1)),size=length(myvar),replace=T)
     if (length(unique(mysample)) == length(unique(myvar)) ){
       return(mysample)
     }

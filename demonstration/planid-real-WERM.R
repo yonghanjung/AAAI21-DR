@@ -5,7 +5,7 @@ source('DRModule.R')
 WERMEstimator = function(OBS,mismode,seednum){
   numRounds = 20 
   maxDepth = 20
-  myverbose = F
+  myverbose = F 
   
   X1 = OBS[,1] 
   Z = OBS[,2] 
@@ -31,6 +31,10 @@ WERMEstimator = function(OBS,mismode,seednum){
     }
     if (mismode == 2){
       RTrain = distortVar(RTrain,seednum)
+      # Rtrain = c(rep(0,nrow(DATA_Train)/3),rep(1,nrow(DATA_Train)/3),rep(2,nrow(DATA_Train)/3))
+      # if (length(Rtrain) < nrow(DATA_Train)){
+      #   Rtrain = c(Rtrain,rep(0,nrow(DATA_Train)-length(Rtrain)))
+      # }
       X2Train = distortVar(X2Train,seednum)
     }
     
@@ -147,10 +151,10 @@ WERMEstimator = function(OBS,mismode,seednum){
     if (mismode == 1){
       Iy.Train = distortVar(Iy.Train,seednum)
     }
-    if (mismode == 2){
-      RTrain = distortVar(RTrain,seednum)
-      X2Train = distortVar(X2Train,seednum)
-    }
+    # if (mismode == 2){
+    #   RTrain = distortVar(RTrain,seednum)
+    #   X2Train = distortVar(X2Train,seednum)
+    # }
     
     prob.R.Array = rep(0,length(Runique))
     for (rval in Runique){
@@ -175,10 +179,10 @@ WERMEstimator = function(OBS,mismode,seednum){
     if (mismode == 1){
       Iy.Train = distortVar(Iy.Train,seednum)
     }
-    if (mismode == 2){
-      RTrain = distortVar(RTrain,seednum)
-      X2Train = distortVar(X2Train,seednum)
-    }
+    # if (mismode == 2){
+    #   RTrain = distortVar(RTrain,seednum)
+    #   X2Train = distortVar(X2Train,seednum)
+    # }
     
     prob.X2.Array = rep(0,length(X2unique))
     for (x2val in X2unique){
@@ -263,12 +267,12 @@ WERMEstimator = function(OBS,mismode,seednum){
     if (length(pred.SW[pred.SW < 0 ]) > 0){
       pred.SW[pred.SW < 0 ] = runif(n=length(pred.SW[pred.SW < 0 ]),min=0,max=min(abs(pred.SW)))  
     }
-    if (mismode == 2){
-      distortval = 1
-      sign_rv = 2*rbinom(n=length(pred.SW),size=1,prob=0.5)-1
-      pred.SW = pred.SW + sign_rv*rnorm(length(pred.SW),distortval,1)
-      pred.SW[pred.SW <= 0] = runif(n=length(pred.SW[pred.SW <= 0]),min=0.5,max=max(pred.SW))
-    }
+    # if (mismode == 2){
+    #   distortval = 1
+    #   sign_rv = 2*rbinom(n=length(pred.SW),size=1,prob=0.5)-1
+    #   pred.SW = pred.SW + sign_rv*rnorm(length(pred.SW),distortval,1)
+    #   pred.SW[pred.SW <= 0] = runif(n=length(pred.SW[pred.SW <= 0]),min=0.5,max=max(pred.SW))
+    # }
     return(pred.SW)
   }
   
@@ -292,7 +296,10 @@ WERMEstimator = function(OBS,mismode,seednum){
     inVar_eval=data.frame(X1=rep(x1val,nrow(DATA_Eval)),X2=rep(x2val,nrow(DATA_Eval)))
     
     xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Iy.Train, weight =learned_W)
-    modelY_xgboost = xgboost(weight = learned_W,verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2)
+    modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2)
+    
+    # xgbMatrix = xgb.DMatrix(data.matrix(inVar_train), label=Iy.Train, weight =learned_W)
+    # modelY_xgboost = xgboost(weight = learned_W,verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2)
     
     predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
     Yx = mean(predY,na.rm=T)
@@ -319,6 +326,7 @@ WERMEstimator = function(OBS,mismode,seednum){
    
   
   mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
+  # mylambda = rep(0,nrow(DATA)/2)
   
   prob.Y.1 = Train.P.Y(DATA_Train,DATA_Eval,mylambda)
   prob.Y.2 = RunTryCatchProb_WERM(Train.P.Y,DATA_Train,DATA_Eval,mylambda) 
@@ -358,15 +366,15 @@ WERMEstimator = function(OBS,mismode,seednum){
   Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Eval,DATA_Train,mylambda,SW_Y)
   Prob.weighted.Y.rx2 = (Prob.weighted.Y.rx2.1+Prob.weighted.Y.rx2.2)/2
   
-  SW_importance_sampling = (Prob.weighted.Y.rx2)/(prob.Y)
+  SW_importance_sampling = (Prob.weighted.Y.rx2*prob.R.X1)/(prob.Y*prob.R.X2X1Z)
   # SW_importance_sampling = (Prob.weighted.Y.rx2)/(prob.Y)
   # if (mismode == 2){
   #   SW_importance_sampling = 2*SW_importance_sampling 
   # }
-  # SW.1 = Train.SW(DATA_Train, DATA_Eval, mylambda,SW_importance_sampling)
-  # SW.2 = Train.SW(DATA_Eval, DATA_Train, mylambda,SW_importance_sampling)
-  # learned_W = SW.1
-  learned_W = SW_importance_sampling
+  SW.1 = Train.SW(DATA_Train, DATA_Eval, mylambda,SW_importance_sampling)
+  SW.2 = Train.SW(DATA_Eval, DATA_Train, mylambda,SW_importance_sampling)
+  learned_W = (SW.1+SW.2)/2
+  # learned_W = SW_importance_sampling
   if (myverbose){
     print(paste(mismode,"prob.Y",round(mean(prob.Y,na.rm=T),4),sep="-"))
     print(paste(mismode,"prob.R.X1",round(mean(prob.R.X1,na.rm=T),4),sep="-"))
@@ -403,8 +411,6 @@ WERMEstimator = function(OBS,mismode,seednum){
   
   return(YxWERM)
 }
-
-
 
 
 

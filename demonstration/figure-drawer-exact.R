@@ -190,15 +190,17 @@ ConstructBoxGG = function(instancename,lossname,ylimits){
                         axis.title.x = element_text(size=20))
 }
 
-ConstructMultipleGG = function(instancename,lossname,ylimits,box_ylimit,mean_median){
+ConstructMultipleGG = function(instancename,lossname,ylimits0,ylimits1,ylimits2,box_ylimit,mean_median){
   for (mismode in c(0,1,2)){
-    mygg = ConstructDrawGG(instancename,mismode,lossname,ylimits,mean_median)  
+    myylimit = get(paste('ylimits',mismode,sep=""))
+    mygg = ConstructDrawGG(instancename,mismode,lossname,myylimit,mean_median)  
     assign(paste("gg",mismode,sep=""),mygg)
   }
   mybox = ConstructBoxGG(instancename,lossname,box_ylimit)
   mygg = ggarrange(gg0, gg1, gg2, mybox + rremove("x.text"), 
                    labels = c("Mis0", "Mis1", "Mis2","Box"),
                    ncol = 4, nrow = 1)
+  # mygg = mygg + ggtitle("HAO")
   return(mygg)
 }
 # instancename = 'Result/napkin-mismode-0-0815-0100'; ylimits = c(0.0,0.15)
@@ -226,10 +228,16 @@ ConstructMultipleGG = function(instancename,lossname,ylimits,box_ylimit,mean_med
 # instancename = "Result/planid-0816-2300"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
 # instancename = "Result/napkin-1817tmp"; lossname = "abs"; ylimits=c(0,0.25); boxlimits = c(0,0.5)
 
-# instancename = "Result/planid-0817-1830"; lossname = "abs"; ylimits=c(0,0.05); boxlimits = c(0,0.5)
-instancename = "Result/napkin-0817-2200"; lossname = "weight"; ylimits=c(0,0.2); boxlimits = c(0,0.5)
+# instancename = "Result/planid-0817-1830"; lossname = "abs"; ylimits0=c(0,0.1); ylimits1 = c(0,0.3); ylimits2 = c(0,0.15); boxlimits = c(0,0.5)
+# instancename = "Result/napkin-0817-2200"; lossname = "abs"; ylimits0=c(0,0.1); ylimits1 = c(0,0.3); ylimits2 = c(0,0.1); boxlimits = c(0,0.5)
 
-gg = ConstructMultipleGG(instancename,lossname,ylimits,boxlimits,'mean')
+# instancename = "Result/napkin-0818-2200-tmp"; lossname = "weight"; ylimits0=c(0,0.1); ylimits1 = c(0,0.25); ylimits2 = c(0,0.1); boxlimits = c(0,0.5)
+# instancename = "Result/planid-0818-2200-tmp"; lossname = "weight"; ylimits0=c(0,0.1); ylimits1 = c(0,0.3); ylimits2 = c(0,0.15); boxlimits = c(0,0.5)
+
+# instancename = "Result/napkin-0819-0230"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); boxlimits = c(0,0.5) # Final 
+instancename = "Result/planid-0819-0200-tmp"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.3); ylimits2 = c(0,0.15); boxlimits = c(0,0.5)
+
+gg = ConstructMultipleGG(instancename,lossname,ylimits0,ylimits1,ylimits2,boxlimits,'mean')
 
 
 

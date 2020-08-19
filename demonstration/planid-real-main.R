@@ -105,7 +105,7 @@ N = as.numeric(args[1])
 # seednum = 12356
 
 # mismode = 0
-# N = 10000
+N = 10000
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)
