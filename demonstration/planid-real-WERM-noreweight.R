@@ -46,7 +46,12 @@ WERMEstimator = function(OBS,mismode,seednum){
     #                   maxdepth=maxDepth, lambda=mylambda, alpha=mylambda/2, objective="binary:logistic")  
     pred.Y = predict(model.Y,newdata=data.matrix(inVarEval),type='response')
     if (mismode == 0){
-      cvgrate =  3
+      cvgrate =  4
+      myN = nrow(DATA_Train)*2
+      pred.Y = fix_pred( pred.Y + rnorm(n=myN, mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    }
+    if (mismode == 0){
+      cvgrate =  2
       myN = nrow(DATA_Train)*2
       pred.Y = fix_pred( pred.Y + rnorm(n=myN, mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
     }

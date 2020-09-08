@@ -78,7 +78,7 @@ WERMEstimator = function(OBS,mismode,seednum){
       myN = nrow(DATA_Train)*2
       predY = fix_pred(predY + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
     }
-    if (mismode == 0){
+    if (mismode == 2){
       cvgrate = 2 
       myN = nrow(DATA_Train)*2
       predY = fix_pred(predY + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))

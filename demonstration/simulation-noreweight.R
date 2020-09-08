@@ -50,13 +50,9 @@ library(tictoc)
 
 
 
-
-
-
-
-
 ### DML presentation -- Kennedy Noise 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-1630' >log-napkin-0908-1630.txt & 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-2000' >log-napkin-0908-2000.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
