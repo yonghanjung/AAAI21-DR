@@ -45,6 +45,11 @@ WERMEstimator = function(OBS,mismode,seednum){
     # model.Y = xgboost(verbose = 0, data = data.matrix(inVarTrain), label = Iy.Train, nrounds = numRounds,
     #                   maxdepth=maxDepth, lambda=mylambda, alpha=mylambda/2, objective="binary:logistic")  
     pred.Y = predict(model.Y,newdata=data.matrix(inVarEval),type='response')
+    if (mismode == 0){
+      cvgrate =  3
+      myN = nrow(DATA_Train)*2
+      pred.Y = fix_pred( pred.Y + rnorm(n=myN, mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    }
     prob.Y = pred.Y*DATA_Eval$Y + (1-pred.Y)*(1-DATA_Eval$Y)
     return(prob.Y)
   }
@@ -66,7 +71,7 @@ WERMEstimator = function(OBS,mismode,seednum){
     
     inVarTrain = data.frame(X1=X1Train)
     inVarEval = data.frame(X1=DATA_Eval$X1)
-  
+    
     model.R.X1 =learnXG(data.matrix(inVarTrain),RTrain,mylambda,binommode=0)
     
     pred.R = t(matrix(predict(model.R.X1, newdata=as.matrix(inVarEval), type='response'), nrow=length(Runique)))
@@ -306,7 +311,7 @@ WERMEstimator = function(OBS,mismode,seednum){
     Yx = mean(predY,na.rm=T)
     return(Yx)    
   }
- 
+  
   
   
   ############################################
@@ -324,10 +329,10 @@ WERMEstimator = function(OBS,mismode,seednum){
   # if (nrow(DATA_Eval) < nrow(DATA_Train)){
   #   DATA_Train = DATA_Train[c(1:nrow(DATA_Eval)),]
   # }
-   
   
-  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
-  # mylambda = rep(0,nrow(DATA)/2)
+  
+  # mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
+  mylambda = rep(0,nrow(DATA)/2)
   
   prob.Y.1 = Train.P.Y(DATA_Train,DATA_Eval,mylambda)
   prob.Y.2 = RunTryCatchProb_WERM(Train.P.Y,DATA_Train,DATA_Eval,mylambda) 
@@ -367,7 +372,18 @@ WERMEstimator = function(OBS,mismode,seednum){
   # }
   
   Prob.weighted.Y.rx2.1 = Train.weighted.Y(DATA_Train,DATA_Eval,mylambda,SW_Y)
-  Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Eval,DATA_Train,mylambda,SW_Y)
+  tryCatch(
+    expr = {
+      Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Eval,DATA_Train,mylambda,SW_Y)
+    },
+    error = function(e){
+      print("Error in the Function")
+    },
+    finally = {
+      Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Train,DATA_Eval,mylambda,SW_Y)
+    }
+  )
+  # Prob.weighted.Y.rx2.2 = Train.weighted.Y(DATA_Eval,DATA_Train,mylambda,SW_Y)
   Prob.weighted.Y.rx2 = (Prob.weighted.Y.rx2.1+Prob.weighted.Y.rx2.2)/2
   
   SW_importance_sampling = (Prob.weighted.Y.rx2*prob.R.X1)/(prob.Y*prob.R.X2X1Z)
@@ -408,7 +424,11 @@ WERMEstimator = function(OBS,mismode,seednum){
           myresult2 = Train.Yx(DATA_Train, DATA_Eval , mylambda, x1val, x2val, learned_W)
         }
       )
+      
       YxWERM[idx] = (myresult1+myresult2)/2
+      YxWERM[idx] = min(YxWERM[idx],1)
+      YxWERM[idx] = max(YxWERM[idx],0)
+      
       idx = idx + 1 
     }
   }

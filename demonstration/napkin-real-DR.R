@@ -69,6 +69,18 @@ DREstimator = function(OBS,mismode,seednum){
     ### Evaluate P(x,y|R,W)
     prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W=DATA_Eval$W)),type='response')
     prob.xy.rW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(DATA_Eval)),W=DATA_Eval$W)),type='response')
+    if (mismode == 0){
+      cvgrate = 4 
+      myN = nrow(DATA_Train)*2
+      prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      prob.xy.rW = fix_pred(prob.xy.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
+    if (mismode == 2){
+      cvgrate = 2 
+      myN = nrow(DATA_Train)*2
+      prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      prob.xy.rW = fix_pred(prob.xy.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
     
     ### Evaluate P(R|W)
     pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=DATA_Eval$W)),type='response')
@@ -94,6 +106,18 @@ DREstimator = function(OBS,mismode,seednum){
     ### Evaluate P(x|R,W)
     prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R, W=DATA_Eval$W)),type='response')
     prob.x.rW = predict(model.x.RW,newdata=data.matrix(data.frame(R=rep(rfix,nrow(DATA_Eval)), W=DATA_Eval$W)),type='response')
+    if (mismode == 0){
+      cvgrate = 4 
+      myN = nrow(DATA_Train)*2
+      prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      prob.x.rW = fix_pred(prob.x.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
+    if (mismode == 2){
+      cvgrate = 2 
+      myN = nrow(DATA_Train)*2
+      prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      prob.x.rW = fix_pred(prob.x.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
     
     ### Evaluate P(R|W)
     pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=DATA_Eval$W)),type='response')

@@ -131,6 +131,19 @@ DREstimator = function(OBS,mismode,seednum){
     pred.Y.RX2.X1Z = predict(model.Y,
                              newdata=data.matrix(data.frame(X1=DATA_Eval$X1, Z=DATA_Eval$Z, R=DATA_Eval$R, X2=DATA_Eval$X2)),
                              type='response')
+    if (mismode == 0){
+      cvgrate =  4
+      myN = nrow(DATA_Train)*2
+      pred.Y.RX2.X1Z = fix_pred( pred.Y.RX2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+      pred.Y.rx2.X1Z = fix_pred( pred.Y.rx2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    }
+    if (mismode == 0){
+      cvgrate =  2
+      myN = nrow(DATA_Train)*2
+      pred.Y.RX2.X1Z = fix_pred( pred.Y.RX2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+      pred.Y.rx2.X1Z = fix_pred( pred.Y.rx2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    }
+    
     # if (mismode == 1){
     #   pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z))
     #   pred.Y.RX2.X1Z = fix_pred(mis_pred(pred.Y.RX2.X1Z))
@@ -236,7 +249,6 @@ DREstimator = function(OBS,mismode,seednum){
     UIF = rep(0,nrow(DATA_Eval))
     myverbose = F 
     for (rvalfix in Runique){
-      
       UIF_M1 = compute_UIF_M1(DATA_Train=DATA_Train, DATA_Eval=DATA_Eval, 
                               trainedlist=trainedlist, 
                               yval=yvalfix, rvalfix=rvalfix, x2valfix=x2valfix)
@@ -298,7 +310,7 @@ DREstimator = function(OBS,mismode,seednum){
   # trainedlist2 = TrainModel(DATA_Train=DATA_Eval, DATA_Eval=DATA_Train, DATA=DATA, mismode = mismode)
   # trainedlist = trainedlist1
   # trainedlist3 = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
-  # trainedlist = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
+  trainedlist = TrainModel(DATA_Train=DATA, DATA_Eval=DATA, DATA=DATA, mismode = mismode)
   
   Yx = rep(0,length(X1unique)*length(X2unique))
   idx = 1 

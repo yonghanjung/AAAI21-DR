@@ -15,6 +15,19 @@ PlugInEstimator = function(OBS,mismode,seednum){
     modelY = learnXG(as.matrix(DATA[,c('W','R','X')]), IyTrain, mylambda, binommode = 1)
     evalMat = as.matrix(myallpossible[,c('W','R','X')])
     predval = predict(modelY,newdata=evalMat,type='response')
+    # Add noise 
+    myN = nrow(DATA)
+    if (mismode == 0){
+      cvgrate = 4 
+      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+      predval = fix_pred(predval)
+    }
+    if (mismode == 2){
+      cvgrate = 2 
+      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+      predval = fix_pred(predval)
+    }
+    
     newcol = (ncol(myallpossible)+1)
     myallpossible[,newcol] = predval
     colnames(myallpossible)[ncol(myallpossible)] = 'prob'
@@ -30,6 +43,17 @@ PlugInEstimator = function(OBS,mismode,seednum){
     modelX = learnXG(as.matrix(DATA[,c('W','R')]),Xtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('W','R')])
     predval = predict(modelX,newdata=evalMat,type='response')
+    myN = nrow(DATA)
+    if (mismode == 0){
+      cvgrate =  4
+      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+      predval = fix_pred(predval)
+    }
+    if (mismode == 2){
+      cvgrate =  2
+      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+      predval = fix_pred(predval)
+    }
     predval = t(matrix(predval,nrow=3))
     probX = rep(0,nrow(myallpossible))
     for (idx in 1:nrow(myallpossible)){

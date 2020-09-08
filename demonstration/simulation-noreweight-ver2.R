@@ -44,6 +44,10 @@ library(tictoc)
 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 30 '0819-0230' >log-napkin-0819-0230.txt &
 
+## nohup taskset -c 0-31 Rscript simulation-ver2.R 'planid' 100 500 1 25 '0820-0930-noreweight' >log-planid-ver2-0820-0930.txt &
+
+## nohup taskset -c 0-15 Rscript simulation-noreweight-ver2.R 'planid' 100 500 1 20 '0821-0130-noreweight-ver2' >log-planid-noreweight-ver2-0821-0130.txt &
+
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
   X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
@@ -103,9 +107,9 @@ if(probleminstance == 'napkin'){
   source('napkin-real-asBDNaive-groundtruth.R')
 }
 if (probleminstance == 'planid'){
-  source('planid-real-data.R')
+  source('planid-real-data-ver2.R')
   source('planid-real-DR.R')
-  source('planid-real-WERM-reweight.R')
+  source('planid-real-WERM-noreweight.R')
   source('planid-real-plugin.R')
   source('planid-real-asBDNaive-groundtruth.R')
 }
@@ -266,7 +270,7 @@ for (nidx in nidx.start:nidx.end){
   #   # return(iter_result)
   # # }
   # }
-    
+  
   val.total = foreach(idx= 1:simRound, .combine = 'rbind',
                       .packages = c('survey', 'boot', 'ipw', 'Hmisc','R.utils','dplyr','arm','xgboost','tictoc','bnlearn')) %do% {
                         seednum = sample(1:10000000,1)
@@ -276,21 +280,21 @@ for (nidx in nidx.start:nidx.end){
                         OBS = tmp[[3]]
                         answer = BDNaiveEstimator(DATA)
                         # answer2 = DRNaiveEstimator(OBS.Large)
-
+                        
                         iter_result = c()
                         for (mismode in c(0,1,2)){
                           PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
                           DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
                           WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
-
+                          
                           performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
                           performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
-
+                          
                           performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
                           performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
                           performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
-
+                          
                           iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
                         }
                         # iter_result = c(performance_PI, performance_DR, performance_WERM)
@@ -435,9 +439,9 @@ for (idx in 1:length(conflist)){
   assign(paste('WERM.',confval,sep=""),mat.summary.WERM.mis0.weight[,idx])
 }
 df.result.mis0 = data.frame(Nlist, Answer.5, Answer.25, Answer.50, Answer.75, Answer.95, Answer.mean,
-                       DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
-                       PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
-                       WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
+                            DR.5,DR.25,DR.50,DR.75,DR.95,DR.mean, # Global
+                            PlugIn.5,PlugIn.25,PlugIn.50,PlugIn.75,PlugIn.95,PlugIn.mean, # Plugin 
+                            WERM.5,WERM.25,WERM.50,WERM.75,WERM.95,WERM.mean
 )
 write.csv(df.result.mis0,paste("Result/",filetitle,"mis0-summary_weight.csv",sep=""))
 

@@ -5,7 +5,7 @@ library(tictoc)
 suppressMessages(source('planid-real-data.R'))
 # suppressMessages(source('planid-real-naive.R'))
 suppressMessages(source('planid-real-plugin.R'))
-suppressMessages(source('planid-real-WERM.R'))
+suppressMessages(source('planid-real-WERM-noreweight.R'))
 suppressMessages(source('planid-real-DR.R'))
 # suppressMessages(source('planid-real-DR-naive.R'))
 suppressMessages(source('planid-real-asBD-groundtruth.R'))
@@ -97,13 +97,13 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,WERManswer,answer,
 
 # mismode = as.numeric(args[1])
 
-seednum = sample(1:10000000,1)
+# seednum = sample(1:10000000,1)
+# N = as.numeric(args[1])
 # set.seed(as.numeric(Sys.time()))
 
-# seednum = 4536437
-N = as.numeric(args[1])
-print(c(seednum,N))
-# seednum = 12356
+N = 10000
+seednum = 8987
+
 
 # mismode = 0
 # N = 10000
@@ -113,6 +113,8 @@ tmp = dataGen(seednum,N,Nmax)
 DATA = tmp[[1]]
 OBS.Large = tmp[[2]]
 OBS = tmp[[3]]
+
+print(c(seednum,N,nrow(OBS),nrow(OBS.Large)))
 
 answer = BDNaiveEstimator(DATA)
 

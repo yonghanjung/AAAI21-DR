@@ -92,7 +92,7 @@ dataGen = function(seednum,N,Nmax){
   DATA = subset(DATA, INT==cval[1] & PVS==cval[2]) 
   covariate_to_keep = c("SHNT","VTUB","SAO2","VLNG","CCHL")
   DATA.unique = myreturnUnique(DATA,covariate_to_keep)
-
+  
   # Generate S nodes 
   # Prob.S = matrix(runif(length(unique(Val1)) * length(unique(Val2)),min=0.5,max=1)
   #                           ,nrow = length(unique(Val1)),ncol = length(unique(Val2)) )
@@ -102,8 +102,8 @@ dataGen = function(seednum,N,Nmax){
   Prob.S.PMB.VMCH = matrix(runif(length(unique(DATA$PMB)) * length(unique(DATA$VMCH)),min=min_prob,max=max_prob),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   # Prob.S.PMB.VMCH = matrix(c(0.15,0.85,0.23,0.82,0.35,0.53,0.7,0.95),nrow = length(unique(DATA$PMB)),ncol = length(unique(DATA$VMCH)) )
   
-  Prob.S.SHNT.VMCH = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$VMCH)),min=min_prob,max=max_prob),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
-  # Prob.S.SHNT.VMCH = matrix(c(0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
+  # Prob.S.SHNT.VMCH = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$VMCH)),min=min_prob,max=max_prob),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
+  Prob.S.SHNT.VMCH = matrix(c(0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$VMCH)) )
   
   Prob.S.SHNT.KINK = matrix(runif(length(unique(DATA$SHNT)) * length(unique(DATA$KINK)),min=min_prob,max=max_prob),nrow = length(unique(DATA$SHNT)),ncol = length(unique(DATA$KINK)) )
   # Prob.S.SHNT.KINK = matrix(c(0.75,0.5,0.75,0.85),nrow = length(unique(DATA$SHNT)), ncol = length(unique(DATA$KINK)) )

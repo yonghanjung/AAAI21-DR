@@ -5,7 +5,7 @@ library(tictoc)
 suppressMessages(source('planid-real-data.R'))
 # suppressMessages(source('planid-real-naive.R'))
 suppressMessages(source('planid-real-plugin.R'))
-suppressMessages(source('planid-real-WERM.R'))
+suppressMessages(source('planid-real-WERM-reweight.R'))
 suppressMessages(source('planid-real-DR.R'))
 # suppressMessages(source('planid-real-DR-naive.R'))
 suppressMessages(source('planid-real-asBD-groundtruth.R'))
@@ -97,16 +97,19 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,WERManswer,answer,
 
 # mismode = as.numeric(args[1])
 
-seednum = sample(1:10000000,1)
+# seednum = sample(1:10000000,1)
 # set.seed(as.numeric(Sys.time()))
 
 # seednum = 4536437
-N = as.numeric(args[1])
-print(c(seednum,N))
+# N = as.numeric(args[1])
+# seednum = as.numeric(args[2])
+
 # seednum = 12356
 
-# mismode = 0
-# N = 10000
+
+N = 1000
+seednum = 12345
+print(c(seednum,N))
 
 Nmax = 1000
 tmp = dataGen(seednum,N,Nmax)

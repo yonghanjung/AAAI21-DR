@@ -73,6 +73,16 @@ WERMEstimator = function(OBS,mismode,seednum){
     modelY_xgboost = xgboost(verbose=0, data=xgbMatrix,nrounds = numRounds,max.depth=maxDepth,lambda=mylambda, alpha=mylambda/2, objective = "binary:logistic")
     
     predY = predict(modelY_xgboost,newdata=data.matrix(inVar_eval),type='response')
+    if (mismode == 0){
+      cvgrate = 4 
+      myN = nrow(DATA_Train)*2
+      predY = fix_pred(predY + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
+    if (mismode == 0){
+      cvgrate = 2 
+      myN = nrow(DATA_Train)*2
+      predY = fix_pred(predY + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    }
     Yx = mean(predY)
     return(Yx)    
   }
