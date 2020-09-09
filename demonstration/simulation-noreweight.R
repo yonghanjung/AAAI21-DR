@@ -53,6 +53,7 @@ library(tictoc)
 ### DML presentation -- Kennedy Noise 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-1630' >log-napkin-0908-1630.txt & 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-2000' >log-napkin-0908-2000.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0908-2000' >log-planid-0908-2000.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -291,7 +292,8 @@ for (nidx in nidx.start:nidx.end){
                         for (mismode in c(0,1,2)){
                           PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
                           DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
-                          WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
+                          # WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
+                          WERManswer = DRanswer
                           
                           performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)

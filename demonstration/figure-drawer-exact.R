@@ -321,7 +321,8 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 # instancename = "Result/planid-0821-0130-noreweight"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.3); ylimits2 = c(0,0.15); xlimits = c(0,5000); boxlimits = c(0,0.3)
 
 # For DML presenting 
-instancename = "Result/napkin-0908-1630"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
+# instancename = "Result/napkin-0908-1630"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
+instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
 
 mismode = 0
 df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))

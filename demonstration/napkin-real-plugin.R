@@ -43,9 +43,9 @@ PlugInEstimator = function(OBS,mismode,seednum){
     modelX = learnXG(as.matrix(DATA[,c('W','R')]),Xtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('W','R')])
     predval = predict(modelX,newdata=evalMat,type='response')
-    myN = nrow(DATA)
+    myN = nrow(DATA)*2
     if (mismode == 0){
-      cvgrate =  4
+      cvgrate =  3
       predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
       predval = fix_pred(predval)
     }
