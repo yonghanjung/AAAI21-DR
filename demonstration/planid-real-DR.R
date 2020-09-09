@@ -137,12 +137,12 @@ DREstimator = function(OBS,mismode,seednum){
       pred.Y.RX2.X1Z = fix_pred( pred.Y.RX2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
       pred.Y.rx2.X1Z = fix_pred( pred.Y.rx2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
     }
-    if (mismode == 2){
-      cvgrate =  2
-      myN = nrow(DATA_Train)*2
-      pred.Y.RX2.X1Z = fix_pred( pred.Y.RX2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
-      pred.Y.rx2.X1Z = fix_pred( pred.Y.rx2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
-    }
+    # if (mismode == 2){
+    #   cvgrate =  2
+    #   myN = nrow(DATA_Train)*2
+    #   pred.Y.RX2.X1Z = fix_pred( pred.Y.RX2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    #   pred.Y.rx2.X1Z = fix_pred( pred.Y.rx2.X1Z + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+    # }
     
     # if (mismode == 1){
     #   pred.Y.rx2.X1Z = fix_pred(mis_pred(pred.Y.rx2.X1Z))

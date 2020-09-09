@@ -112,12 +112,12 @@ DREstimator = function(OBS,mismode,seednum){
       prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
       prob.x.rW = fix_pred(prob.x.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
     }
-    if (mismode == 2){
-      cvgrate = 2 
-      myN = nrow(DATA_Train)*2
-      prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
-      prob.x.rW = fix_pred(prob.x.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
-    }
+    # if (mismode == 2){
+    #   cvgrate = 2 
+    #   myN = nrow(DATA_Train)*2
+    #   prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    #   prob.x.rW = fix_pred(prob.x.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+    # }
     
     ### Evaluate P(R|W)
     pred.R.W = predict(model.R.W, newdata=data.matrix(data.frame(W=DATA_Eval$W)),type='response')

@@ -47,13 +47,16 @@ library(tictoc)
 ## nohup taskset -c 0-31 Rscript simulation-ver2.R 'planid' 100 500 1 25 '0820-0930-noreweight' >log-planid-ver2-0820-0930.txt &
 
 ## nohup taskset -c 16-31 Rscript simulation-noreweight.R 'planid' 100 500 1 20 '0821-0130-noreweight' >log-planid-noreweight-0821-0130.txt &
+## nohup taskset -c 16-31 Rscript simulation-noreweight.R 'planid' 100 500 1 20 '0821-0130-noreweight' >log-planid-noreweight-0821-0130.txt &
 
 
 
 ### DML presentation -- Kennedy Noise 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-1630' >log-napkin-0908-1630.txt & 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0908-2000' >log-napkin-0908-2000.txt & 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0909-0000' >log-napkin-0909-0000.txt & 
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0908-2000' >log-planid-0908-2000.txt & 
+## nohup taskset -c 0-31 Rscript simulation.R 'planid' 50 500 1 20 '0909-0800' >log-planid-0909-0800.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -293,7 +296,7 @@ for (nidx in nidx.start:nidx.end){
                           PIanswer = RunFunWithTime(timeoutFun,PlugInEstimator, OBS, mismode, seednum, timeoutLim)
                           DRanswer = RunFunWithTime(timeoutFun,DREstimator, OBS, mismode, seednum, timeoutLim)
                           # WERManswer = RunFunWithTime(timeoutFun,WERMEstimator, OBS, mismode, seednum, timeoutLim)
-                          WERManswer = DRanswer
+                          WERManswer = rep(0,length(DRanswer))
                           
                           performance_PI_Weight = reportPerformance_Weight(OBS,answer,PIanswer)
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)

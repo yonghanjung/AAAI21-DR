@@ -91,27 +91,28 @@ ConstructBoxPlot = function(instancename,lossname){
     df.result.PlugIn = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='PlugIn')))
     vector.PlugIn = df.result.PlugIn[,ncol(df.result.PlugIn)]
     
-    df.result.WERM = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='WERM')))
-    vector.WERM = df.result.WERM[,ncol(df.result.WERM)]
+    # df.result.WERM = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='WERM')))
+    # vector.WERM = df.result.WERM[,ncol(df.result.WERM)]
     
     assign(paste('vector.DR.mis',mismode,sep=""),vector.DR)
     assign(paste('vector.PlugIn.mis',mismode,sep=""),vector.PlugIn)
-    assign(paste('vector.WERM.mis',mismode,sep=""),vector.WERM)
+    # assign(paste('vector.WERM.mis',mismode,sep=""),vector.WERM)
   }
   
   myN = length(vector.PlugIn.mis0)
   WAAE = c(vector.PlugIn.mis0,vector.PlugIn.mis1,vector.PlugIn.mis2,
-          vector.WERM.mis0,vector.WERM.mis1,vector.WERM.mis2,
+          # vector.WERM.mis0,vector.WERM.mis1,vector.WERM.mis2,
           vector.DR.mis0,vector.DR.mis1,vector.DR.mis2)
   label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
-            rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
-            rep("DR",myN),rep("DR",myN),rep("DR",myN))
+            # rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
+            rep("DML",myN),rep("DML",myN),rep("DML",myN))
   Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
-           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+           # rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
            rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
   plotData = data.frame(WAAE,label,Type)
-  plotData$label = factor(plotData$label,c("PI","WERM","DR"))
-  plotData$mycolor = c(rep("red",3*myN),rep("green",3*myN),rep("blue",3*myN))
+  # plotData$label = factor(plotData$label,c("PI","WERM","DR"))
+  plotData$label = factor(plotData$label,c("PI","DML"))
+  plotData$mycolor = c(rep("red",3*myN),rep("blue",3*myN))
   return(plotData)
 }
 
@@ -135,17 +136,18 @@ ConstructDrawGG = function(instancename,mismode,lossname,ylimits,xlimits,mean_me
   
   gg = gg + geom_smooth(data = df.result, aes(x=Nlist,y=DR.50,colour="DR.50"),size=1,method=regmethod,se=F, span=spanval)  
   gg = gg + geom_smooth(data = df.result, aes(x=Nlist,y=PlugIn.50,colour="PlugIn.50"),size=1,method=regmethod,se=F, span=spanval)
-  gg = gg + geom_smooth(data = df.result, aes(x=Nlist,y=WERM.50,colour="WERM.50"),size=1,method=regmethod,se=F, span=spanval)
+  # gg = gg + geom_smooth(data = df.result, aes(x=Nlist,y=WERM.50,colour="WERM.50"),size=1,method=regmethod,se=F, span=spanval)
     
   gg = gg + geom_ribbon(data=df.result, aes(x=Nlist, ymin=DR.25,ymax=DR.75),alpha=0.2, fill="dodgerblue")
-  gg = gg + geom_ribbon(data=df.result, aes(x=Nlist, ymin=WERM.25,ymax=WERM.75),alpha=0.2, fill="orange")
   gg = gg + geom_ribbon(data=df.result, aes(x=Nlist, ymin=PlugIn.25,ymax=PlugIn.75),alpha=0.2, fill="firebrick1")
+  # gg = gg + geom_ribbon(data=df.result, aes(x=Nlist, ymin=WERM.25,ymax=WERM.75),alpha=0.2, fill="orange")
 
   gg = gg + geom_point(data=df.result,aes(x=Nlist,y=PlugIn.50,colour='PlugIn.50'),size=point_size,alpha=alpha_point,shape=4)
   gg = gg + geom_point(data=df.result,aes(x=Nlist,y=DR.50,colour='DR.50'),size=point_size,alpha=alpha_point,shape=16)
-  gg = gg + geom_point(data=df.result,aes(x=Nlist,y=WERM.50,colour='WERM.50'),size=point_size,alpha=alpha_point,shape=9)
+  # gg = gg + geom_point(data=df.result,aes(x=Nlist,y=WERM.50,colour='WERM.50'),size=point_size,alpha=alpha_point,shape=9)
 
-  gg = gg + scale_color_manual("",breaks=c("DR.50","PlugIn.50","WERM.50"),values = c("blue", "firebrick2","orange"),labels=c("DR","Plug-In","WERM"))
+  # gg = gg + scale_color_manual("",breaks=c("DR.50","PlugIn.50","WERM.50"),values = c("blue", "firebrick2","orange"),labels=c("DR","Plug-In","WERM"))
+  gg = gg + scale_color_manual("",breaks=c("DR.50","PlugIn.50"),values = c("blue", "firebrick2"),labels=c("DML","Plug-In"))
   
   # gg = gg + ggtitle(Dtitle) 
   gg = gg + coord_cartesian(ylim=ylimits,xlim=xlimits)
@@ -172,7 +174,8 @@ ConstructBoxGG = function(instancename,lossname,ylimits){
   ggbox = ggbox + geom_boxplot(aes(fill=label))
   # gg = gg + stat_summary(fun=mean, geom="point", aes(group=label), position=position_dodge(.9), color="red", size=3)
   # gg = gg + geom_errorbar(aes(x=Type,ymax = Means + SDs, ymin = Means - SDs),position = "dodge")
-  ggbox = ggbox + scale_fill_manual(values=c("#FF6666","#FFFF66","#3399FF"))
+  # ggbox = ggbox + scale_fill_manual(values=c("#FF6666","#FFFF66","#3399FF"))
+  ggbox = ggbox + scale_fill_manual(values=c("#FF6666","#FFFF66"))
   # ggbox = ggbox + scale_fill_manual(values=c("blue","firebrick2","orange"))
   
   ggbox = ggbox + coord_cartesian(ylim=ylimits)
@@ -197,7 +200,7 @@ ConstructErrorGG = function(instancename,lossname,ylimits){
   # Box plot with mean and sd 
   box.result = ConstructBoxPlot(instancename,lossname)
   mySummary = c()
-  for (mylabel in c('DR','PI','WERM')){
+  for (mylabel in c('DML','PI')){
     for (myType in c("Correct","Mis-1","Mis-2")){
       filtered_box = subset(box.result,label==mylabel&Type==myType)    
       
@@ -210,22 +213,38 @@ ConstructErrorGG = function(instancename,lossname,ylimits){
       mySummary = rbind(mySummary,c(myMean,mySD,mylabel,myType,mycolor,myLow,myHigh))
     }
   }
+  # for (mylabel in c('DR','PI','WERM')){
+  #   for (myType in c("Correct","Mis-1","Mis-2")){
+  #     filtered_box = subset(box.result,label==mylabel&Type==myType)    
+  #     
+  #     myMean = mean(filtered_box[,'WAAE'])
+  #     mySD = sd(filtered_box[,'WAAE'])
+  #     myLow = max(myMean-mySD,0)
+  #     myHigh = min(myMean+mySD,1)
+  #     
+  #     mycolor = unique(filtered_box[,'mycolor'])
+  #     mySummary = rbind(mySummary,c(myMean,mySD,mylabel,myType,mycolor,myLow,myHigh))
+  #   }
+  # }
   colnames(mySummary) = c('WAAE','SD','Label','Scenario','Color','Low','High')
   mySummary = as.data.frame(mySummary)
   mySummary[,'WAAE'] = as.numeric(mySummary[,'WAAE'])
   mySummary[,'SD'] = as.numeric(mySummary[,'SD'])
   mySummary[,'Low'] = as.numeric(mySummary[,'Low'])
   mySummary[,'High'] = as.numeric(mySummary[,'High'])
-  mySummary[,'order'] = c(1,2,3,7,8,9,4,5,6)
+  # mySummary[,'order'] = c(1,2,3,7,8,9,4,5,6)
+  mySummary[,'order'] = c(1,2,3,4,5,6)
   mySummary = mySummary[order(mySummary[,'order']),]
-  mySummary[,'group'] = c(rep('A',3),rep('B',3),rep('C',3))
+  # mySummary[,'group'] = c(rep('A',3),rep('B',3),rep('C',3))
+  mySummary[,'group'] = c(rep('A',3),rep('B',3))
   
   # boxlimits = c(0,0.3)
   myPosition = position_dodge(.5)
   gg = ggplot(mySummary, aes(x=Scenario,y=WAAE,color=group,ymin=Low,ymax=High))
   gg = gg + geom_point(shape=15,size=5,position=myPosition)
   gg = gg + geom_errorbar(position = myPosition,width=0.3,size=1.5)
-  gg = gg + scale_color_manual("Label",values=c("#3399FF","orange","firebrick1"))
+  # gg = gg + scale_color_manual("Label",values=c("#3399FF","orange","firebrick1"))
+  gg = gg + scale_color_manual("Label",values=c("#3399FF","firebrick1"))
   gg = gg + coord_cartesian(ylim=boxlimits)
   gg = gg = gg + theme_bw()
   gg = gg + guides(color=guide_legend())
@@ -322,9 +341,14 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 
 # For DML presenting 
 # instancename = "Result/napkin-0908-1630"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
-instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
+# instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
+# instancename = "Result/planid-0908-2000"; lossname = "abs"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
 
-mismode = 0
+# DML Final 
+instancename = "Result/napkin-0909-0000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+
+
+mismode = 2
 df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))
 df.result.DR = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='DR')))
 df.result.PlugIn = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='PlugIn')))
@@ -346,8 +370,8 @@ varGG = varGG + geom_smooth(data=myVar, aes(x=X,y=varWERM),color="orange") + geo
 
 
 
-gg = ConstructMultipleGG(instancename,lossname,ylimits0,ylimits1,ylimits2,boxlimits,xlimits,'mean')
-myresult = ConstructGGOutput(instancename,lossname,ylimits0,ylimits1,ylimits2,boxlimits,xlimits,'mean')
+gg = ConstructMultipleGG(instancename,lossname,ylimits0,ylimits1,ylimits2,boxlimits,xlimits,mean_median)
+myresult = ConstructGGOutput(instancename,lossname,ylimits0,ylimits1,ylimits2,boxlimits,xlimits,mean_median)
 
 # File Save
 FileSave = F 
