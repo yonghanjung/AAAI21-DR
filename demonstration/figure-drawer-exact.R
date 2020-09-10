@@ -125,13 +125,11 @@ ConstructDrawGG = function(instancename,mismode,lossname,ylimits,xlimits,mean_me
   regmethod = 'auto'
   # xlimits = c(0,5000)
   # xlimits = c(0,max(df.result$Nlist))
-  spanval = 0.8
-  point_size = 3
+  spanval = 1
+  point_size = 2.5
   alpha_point = 1
-  
-  twoD = T
-  medianTF = T
-  
+
+
   gg = ggplot(data = df.result, aes(x=Nlist))
   
   gg = gg + geom_smooth(data = df.result, aes(x=Nlist,y=DR.50,colour="DR.50"),size=1,method=regmethod,se=F, span=spanval)  
@@ -341,14 +339,16 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 
 # For DML presenting 
 # instancename = "Result/napkin-0908-1630"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
-# instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
-# instancename = "Result/planid-0908-2000"; lossname = "abs"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25) # Final
+# instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+# instancename = "Result/planid-0908-2000"; lossname = "abs"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+# instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
 
 # DML Final 
-instancename = "Result/napkin-0909-0000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+# instancename = "Result/napkin-0909-0000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.3); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
 
 
-mismode = 2
+mismode = 0
 df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))
 df.result.DR = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='DR')))
 df.result.PlugIn = ReadCsv(read.csv(MakeFileName(instancename,mismode,lossname,mymodel='PlugIn')))
@@ -380,7 +380,6 @@ if (FileSave){
   mismode = 2
   # filename = paste("Result/Plot/napkin/napkin-mis",mismode,".pdf",sep="")
   filename = paste("Result/Plot/planid/planid-mis",mismode,".pdf",sep="")
-  # filename = paste("Result/Plot/planid/planid-mis",mismode,".pdf",sep="")
   pdf(file=filename, width=8,heigh=6)
   myresult[[(mismode+1)]]  
   dev.off()

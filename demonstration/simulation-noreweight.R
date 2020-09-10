@@ -57,6 +57,7 @@ library(tictoc)
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 100 500 1 20 '0909-0000' >log-napkin-0909-0000.txt & 
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0908-2000' >log-planid-0908-2000.txt & 
 ## nohup taskset -c 0-31 Rscript simulation.R 'planid' 50 500 1 20 '0909-0800' >log-planid-0909-0800.txt & 
+## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 50 500 1 20 '0909-1930' >log-napkin-0909-1930.txt & 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -302,9 +303,13 @@ for (nidx in nidx.start:nidx.end){
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
                           performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
                           
-                          performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
-                          performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
-                          performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
+                          performance_PI_Abs = performance_PI_Weight
+                          performance_DR_Abs = performance_DR_Weight
+                          performance_WERM_Abs = performance_WERM_Weight
+                          
+                          # performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
+                          # performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
+                          # performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
                           
                           iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
                         }

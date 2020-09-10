@@ -18,15 +18,15 @@ PlugInEstimator = function(OBS,mismode,seednum){
     # Add noise 
     myN = nrow(DATA)
     if (mismode == 0){
-      cvgrate = 4 
+      cvgrate = 3 
       predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
       predval = fix_pred(predval)
     }
-    if (mismode == 2){
-      cvgrate = 2 
-      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
-      predval = fix_pred(predval)
-    }
+    # if (mismode == 2){
+    #   cvgrate = 2 
+    #   predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+    #   predval = fix_pred(predval)
+    # }
     
     newcol = (ncol(myallpossible)+1)
     myallpossible[,newcol] = predval
@@ -49,11 +49,11 @@ PlugInEstimator = function(OBS,mismode,seednum){
       predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
       predval = fix_pred(predval)
     }
-    if (mismode == 2){
-      cvgrate =  2
-      predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
-      predval = fix_pred(predval)
-    }
+    # if (mismode == 2){
+    #   cvgrate =  2
+    #   predval = predval + rnorm(n=nrow(evalMat), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    
+    #   predval = fix_pred(predval)
+    # }
     predval = t(matrix(predval,nrow=3))
     probX = rep(0,nrow(myallpossible))
     for (idx in 1:nrow(myallpossible)){
