@@ -106,9 +106,9 @@ ConstructBoxPlot = function(instancename,lossname){
   label = c(rep("PI",myN),rep("PI",myN),rep("PI",myN),
             # rep("WERM",myN),rep("WERM",myN),rep("WERM",myN),
             rep("DML",myN),rep("DML",myN),rep("DML",myN))
-  Type = c(rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
+  Type = c(rep("DB",myN),rep("DR-1",myN),rep("DR-2",myN),
            # rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN),
-           rep("Correct",myN),rep("Mis-1",myN),rep("Mis-2",myN))
+           rep("DB",myN),rep("DR-1",myN),rep("DR-2",myN))
   plotData = data.frame(WAAE,label,Type)
   # plotData$label = factor(plotData$label,c("PI","WERM","DR"))
   plotData$label = factor(plotData$label,c("PI","DML"))
@@ -125,8 +125,8 @@ ConstructDrawGG = function(instancename,mismode,lossname,ylimits,xlimits,mean_me
   regmethod = 'auto'
   # xlimits = c(0,5000)
   # xlimits = c(0,max(df.result$Nlist))
-  spanval = 1
-  point_size = 2.5
+  spanval = 1.5
+  point_size = 3
   alpha_point = 1
 
 
@@ -199,7 +199,7 @@ ConstructErrorGG = function(instancename,lossname,ylimits){
   box.result = ConstructBoxPlot(instancename,lossname)
   mySummary = c()
   for (mylabel in c('DML','PI')){
-    for (myType in c("Correct","Mis-1","Mis-2")){
+    for (myType in c("DB","DR-1","DR-2")){
       filtered_box = subset(box.result,label==mylabel&Type==myType)    
       
       myMean = mean(filtered_box[,'WAAE'])
@@ -342,9 +342,11 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 # instancename = "Result/napkin-0908-2000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
 # instancename = "Result/planid-0908-2000"; lossname = "abs"; ylimits0=c(0,0.25); ylimits1 = c(0,0.25); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
 # instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+# instancename = "Result/napkin-0909-1930"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.3); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final # Less decaying in DR2 
+# instancename = "Result/napkin-0909-2015"; lossname = "weight"; ylimits0=c(0,0.15); ylimits1 = c(0,0.25); ylimits2 = c(0,0.15); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final # Less decaying in DR2 
 
 # DML Final 
-# instancename = "Result/napkin-0909-0000"; lossname = "weight"; ylimits0=c(0,0.25); ylimits1 = c(0,0.3); ylimits2 = c(0,0.25); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final
+# instancename = "Result/napkin-0909-2015"; lossname = "weight"; ylimits0=c(0,0.20); ylimits1 = c(0,0.20); ylimits2 = c(0,0.20); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final # Less decaying in DR2 
 instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
 
 
@@ -377,9 +379,9 @@ myresult = ConstructGGOutput(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 FileSave = F 
 if (FileSave){
   print("FileSave")
-  mismode = 2
-  # filename = paste("Result/Plot/napkin/napkin-mis",mismode,".pdf",sep="")
-  filename = paste("Result/Plot/planid/planid-mis",mismode,".pdf",sep="")
+  mismode = 3
+  filename = paste("Result/Plot/napkin/napkin-mis",mismode,".pdf",sep="")
+  # filename = paste("Result/Plot/planid/planid-mis",mismode,".pdf",sep="")
   pdf(file=filename, width=8,heigh=6)
   myresult[[(mismode+1)]]  
   dev.off()

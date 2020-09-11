@@ -58,6 +58,7 @@ library(tictoc)
 ## nohup taskset -c 16-31 Rscript simulation.R 'planid' 100 500 1 20 '0908-2000' >log-planid-0908-2000.txt & 
 ## nohup taskset -c 0-31 Rscript simulation.R 'planid' 50 500 1 20 '0909-0800' >log-planid-0909-0800.txt & 
 ## nohup taskset -c 0-15 Rscript simulation.R 'napkin' 50 500 1 20 '0909-1930' >log-napkin-0909-1930.txt & 
+## nohup taskset -c 16-31 Rscript simulation.R 'napkin' 50 500 1 20 '0909-2015' >log-napkin-0909-2015.txt &  // correct-PI vs. mis-DML
 
 reportingPerformance_planid = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
