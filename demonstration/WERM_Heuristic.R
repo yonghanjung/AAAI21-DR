@@ -17,6 +17,42 @@ library(mise)
 numRounds = 20 
 maxDepth = 20
 
+highdim_reg_xgboost = function(OBS, outVarVector){
+  ### P(W), P(W|X)
+  for (d in 1:D){
+    outVar = data.matrix(outVarVector[,d])
+    if (d > 1){
+      # P(r)
+      inVar = data.matrix(outVarVector[,c(1:(d-1))])
+      MyModel = xgboost(verbose = 0, data = data.matrix(inVar), label = outVar, nrounds = 20,max.depth=10,lambda=0,alpha=0, objective = "binary:logistic")
+      list.Pr = c(list.Pr, list(MyModel))
+    }else{
+      inVar = data.matrix(rep(1,nrow(OBS)))
+      MyModel = xgboost(verbose = 0, data = data.matrix(inVar), label = outVar, nrounds = 20,max.depth=10,lambda=0,alpha=0, objective = "binary:logistic")
+      list.Pr = list(MyModel)
+    }
+  }
+  return(list.Pr)
+}
+
+highdim_reg_xgboost_input = function(OBS, outVarVector, inputVector){
+  ### P(W), P(W|X)
+  for (d in 1:D){
+    outVar = data.matrix(outVarVector[,d])
+    if (d > 1){
+      # P(r)
+      inVar = data.matrix(outVarVector[,c(1:(d-1))],inputVector)
+      MyModel = xgboost(verbose = 0, data = data.matrix(inVar), label = outVar, nrounds = 20,max.depth=10,lambda=0,alpha=0, objective = "binary:logistic")
+      list.Pr = c(list.Pr, list(MyModel))
+    }else{
+      inVar = data.matrix(inputVector)
+      MyModel = xgboost(verbose = 0, data = data.matrix(inVar), label = outVar, nrounds = 20,max.depth=10,lambda=0,alpha=0, objective = "binary:logistic")
+      list.Pr = list(MyModel)
+    }
+  }
+  return(list.Pr)
+}
+
 learnXG = function(inVar,labelval,regval,binommode){
   ############################
   # Objective

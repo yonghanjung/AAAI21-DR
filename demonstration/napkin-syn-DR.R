@@ -12,9 +12,9 @@ DREstimator = function(OBS,mydim,mismode,seednum){
     X = DATA_Train[,(mydim+2)]
     Y = DATA_Train[,(mydim+3)]
     
-    IyTrain = (DATA_Train$Y == yfix)*1
-    Rtrain = DATA_Train$R 
-    Xtrain = DATA_Train$X 
+    IyTrain = (Y == yfix)*1
+    Rtrain = R
+    Xtrain = X
     if (mismode == 1){
       IyTrain = distortVar(IyTrain,seednum)
       Xtrain = distortVar(Xtrain,seednum)
@@ -71,9 +71,9 @@ DREstimator = function(OBS,mydim,mismode,seednum){
     model.xy.RW = trainedlist[[1]]; model.x.RW = trainedlist[[2]]; model.R.W = trainedlist[[3]]
     
     rfix = ChooseR(DATA_Eval,xfix)
-    IrEval = (DATA_Eval$R == rfix)*1
-    IxEval = (DATA_Eval$X == xfix)*1
-    IyEval = (DATA_Eval$Y == yfix)*1
+    IrEval = (R == rfix)*1
+    IxEval = (X == xfix)*1
+    IyEval = (Y == yfix)*1
     IxyEval = IxEval * IyEval
     
     ### Evaluate P(x,y|R,W)

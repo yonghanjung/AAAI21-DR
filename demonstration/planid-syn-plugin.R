@@ -6,9 +6,15 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   yvalfix = 1 
   ## Compute P(y|x1,z,r,x2)
   Expect.Y = function(myallpossible,DATA,mylambda){
-    IyTrain = (DATA$Y == yvalfix)*1
-    X2Train = DATA$X2
-    Rtrain = DATA$R
+    Z = DATA[,c(1:D)] 
+    R = DATA[,(D+1)]
+    X1 = DATA[,(D+2)] 
+    X2 = DATA[,(D+3)]
+    Y = DATA[,(D+4)]
+    
+    IyTrain = (Y == yvalfix)*1
+    X2Train = X2
+    Rtrain = R
     if (mismode == 1){
       IyTrain = distortVar(IyTrain,seednum)
     }
@@ -16,8 +22,8 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
       Rtrain = distortVar(Rtrain,seednum)
       X2Train = distortVar(X2Train,seednum)
     }
-    modelY = learnXG(as.matrix(DATA[,c('X1','Z','R','X2')]),IyTrain,mylambda,binommode = 1)
-    evalMat = as.matrix(myallpossible[,c('X1','Z','R','X2')])
+    modelY = learnXG(inVar = data.matrix(data.frame(Z,R,X1,X2)), labelval = IyTrain, regval = mylambda,binommode = 1)
+    evalMat = as.matrix(myallpossible)
     predval = predict(modelY,newdata=evalMat,type='response')
     myN = nrow(OBS)*2
     if (mismode == 0){
@@ -38,31 +44,52 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   
   ## Compute P(z|x1)
   Prob.Z.X1 = function(myallpossible,DATA,mylambda){
-    modelZ = learnXG(as.matrix(DATA[,c('X1')]),DATA$Z,mylambda,binommode = 0)
-    evalMat = as.matrix(myallpossible[,c('X1')])
-    predval = predict(modelZ,newdata=evalMat,type='response')
-    predval = t(matrix(predval,nrow=length(Zunique)))
-    probZ = rep(0,nrow(myallpossible))
-    for (idx in 1:nrow(myallpossible)){
-      zval = myallpossible$Z[idx]
-      probZ[idx] = predval[idx,(zval+1)]
+    Z = DATA[,c(1:D)] 
+    R = DATA[,(D+1)]
+    X1 = DATA[,(D+2)] 
+    X2 = DATA[,(D+3)]
+    Y = DATA[,(D+4)]
+    
+    # inVar,labelval,regval,binommode
+    modelZ = highdim_reg_xgboost_input(DATA,Z,X1)
+    tmp = rep(1,nrow(myallpossible))
+    for (d in 1:D){
+      if (d == 1){
+        predInVar = data.matrix(rep(1,nrow(myallpossible)))
+      }else{
+        predInVar = data.matrix(allpossible[,c(1:(d-1))])
+      }
+      predval = predict(modelZ[[d]],newdata=predInVar,type='response') # P(Zd =1 | Z(d-1),Z(d-2),...,Z(1),X)
+      # predval[predval < 0] = 1e-8
+      # predval[predval > 1] = 1 - 1e-8
+      resultval = predval * allpossible[d] + (1-predval) * (1-allpossible[d])
+      tmp = tmp * resultval
     }
-    newcol = (ncol(myallpossible)+1)
-    myallpossible[,newcol] = probZ
-    colnames(myallpossible)[ncol(myallpossible)] = 'prob'
+
+    myallpossible[,'prob'] = tmp
+    # 
+    # Wtable = allpossible
+    # Wtable[,(ncol(allpossible)+1)] = tmp
+    # colnames(Wtable)[ncol(Wtable)] = 'prob'
     return(myallpossible)
   }
   
   ## Compute P(r|x1)
   Prob.R.X1 = function(myallpossible,DATA,mylambda){
-    Rtrain = DATA$R
-    X2Train = DATA$X2
+    Z = DATA[,c(1:D)] 
+    R = DATA[,(D+1)]
+    X1 = DATA[,(D+2)] 
+    X2 = DATA[,(D+3)]
+    Y = DATA[,(D+4)]
+    
+    Rtrain = R
+    X2Train = X2
     if (mismode == 2){
       Rtrain = distortVar(Rtrain,seednum)
       X2Train = distortVar(X2Train,seednum)
     }
     
-    modelR = learnXG(as.matrix(DATA[,c('X1')]),Rtrain,mylambda,binommode = 0)
+    modelR = learnXG(as.matrix(X1),Rtrain,mylambda,binommode = 0)
     evalMat = as.matrix(myallpossible[,c('X1')])
     predval = predict(modelR,newdata=evalMat,type='response')
     predval = t(matrix(predval,nrow=length(Runique)))
@@ -103,15 +130,17 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   
   # Enumerate all possible values of column
   tmp = c()
-  tmp = append(tmp,list(X1unique)) # X1 # RiskAversion: 0 highest 
-  tmp = append(tmp, list(Zunique)) # Z
-  tmp = append(tmp,list(Runique)) # R
-  tmp = append(tmp,list(X2unique)) # X2 # Accident: 3 highest 
+  for (d in 1:D){
+    tmp = append(tmp,list(Zunique)) # Z 
+  }
+  Zname = paste("Z",1:D,sep="")
+  tmp = append(tmp,list(X1unique)) # R # RiskAversion: 0 highest 
+  tmp = append(tmp, list(Zunique)) # X1
+  tmp = append(tmp,list(Runique)) # X2
   allpossible = expand.grid(tmp)
-  colnames(allpossible) = c('X1','Z','R','X2')
+  colnames(allpossible) = c(Zname,'R','X1','X2')
   
-  
-  mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
+  mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
   
   Ytable1 = Expect.Y(allpossible,DATA_Train,mylambda)
   Ytable2 = RunTryCatchProb_plugin(Expect.Y, allpossible, DATA_Train, DATA_Eval, mylambda)
@@ -131,7 +160,7 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   idx = 1 
   Array.Prob.X1 = rep(0,length(X1unique))
   for (x1val in X1unique){
-    Array.Prob.X1[idx] = nrow(subset(DATA,X1==x1val))/nrow(DATA)
+    Array.Prob.X1[idx] = nrow(subset(OBS,X1==x1val))/nrow(OBS)
     idx = idx + 1 
   }
   Prob.X1.Table = allpossible 

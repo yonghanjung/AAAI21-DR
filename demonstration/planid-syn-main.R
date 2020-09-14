@@ -6,18 +6,32 @@ library(tictoc)
 mise()
 
 computePerformance = function(OBS,answer,prediction){
-  Xunique = unique(OBS$X)[order(unique(OBS$X))]
+  X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
+  X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
   idx = 1 
-  proportion_X = rep(0,length(Xunique))
-  for (xval in Xunique){
-    proportion_X[idx] = nrow(subset(OBS,X==xval))/nrow(OBS)
-    idx = idx + 1 
+  proportion_X = rep(0,length(X1unique)*length(X2unique))
+  for (x1val in X1unique){
+    for (x2val in X2unique){
+      proportion_X[idx] = nrow(subset(OBS,X1==x1val & X2==x2val))/nrow(OBS)
+      idx = idx + 1 
+    }
   }
   return(sum(abs(answer-prediction)*proportion_X))
 }
 
 computePerformanceAbsolute = function(OBS,answer,prediction){
   return(mean(abs(answer-prediction),na.rm=T))
+  # X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
+  # X2unique = unique(OBS$X2)[order(unique(OBS$X2))]
+  # idx = 1 
+  # proportion_X = rep(0,length(X1unique)*length(X2unique))
+  # for (x1val in X1unique){
+  #   for (x2val in X2unique){
+  #     proportion_X[idx] = nrow(subset(OBS,X1==x1val & X2==x2val))/nrow(OBS)
+  #     idx = idx + 1 
+  #   }
+  # }
+  # return(sum(abs(answer-prediction)*proportion_X))
 }
 
 ResultingPerformanceTable_Absolute = function(PIanswer,DRanswer,answer,OBS){
@@ -77,8 +91,8 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,answer,OBS){
 ################################
 source('planid-syn-data.R') # Napkin dataset generation code 
 # source('napkin-WERM.R')
-source('napkin-syn-plugin.R')
-source('napkin-syn-DR.R')
+source('planid-syn-plugin.R')
+source('planid-syn-DR.R')
 
 N = 1000
 Nintv = 1000000
@@ -91,7 +105,9 @@ mytmp = dataGen(seednum,N,Nintv,D,C)
 OBS = mytmp[[1]] # Observational dataset 
 INTV = mytmp[[2]]
 
-answer = rep(0,4)
+X1unique = c(0,1)
+X2unique = c(0,1)
+answer = rep(0,length(X1unique)*length(X2unique))
 idx = 1
 yval = 1 
 for (x1val in c(0,1)){
@@ -101,10 +117,12 @@ for (x1val in c(0,1)){
   }
 }
 
-proportion_X = rep(0,length(Xunique)); idx = 1
-for (xval in Xunique){
-  proportion_X[idx] = nrow(subset(OBS,X==xval))/nrow(OBS)
-  idx = idx + 1 
+proportion_X = rep(0,length(X1unique)*length(X2unique)); idx = 1
+for (x1val in X1unique){
+  for (x2val in X2unique){
+    proportion_X[idx] = nrow(subset(OBS,X1==x1val & X2==x2val))/nrow(OBS)
+    idx = idx + 1   
+  }
 }
 proportion_X = round(proportion_X,4)
 
