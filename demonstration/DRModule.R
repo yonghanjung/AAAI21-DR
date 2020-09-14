@@ -68,6 +68,8 @@ nonRandomSampleSplit = function(OBS,mysize){
   return(list(OBS_1,OBS_2))
 }
 
+
+
 GoodSplit = function(OBS){
   totalidx = c(1:nrow(OBS))
   

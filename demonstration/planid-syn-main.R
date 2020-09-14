@@ -75,7 +75,7 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,answer,OBS){
 ################################
 # Dataset Generation 
 ################################
-source('napkin-syn-data.R') # Napkin dataset generation code 
+source('planid-syn-data.R') # Napkin dataset generation code 
 # source('napkin-WERM.R')
 source('napkin-syn-plugin.R')
 source('napkin-syn-DR.R')
@@ -91,16 +91,16 @@ mytmp = dataGen(seednum,N,Nintv,D,C)
 OBS = mytmp[[1]] # Observational dataset 
 INTV = mytmp[[2]]
 
-Xunique = unique(OBS$X)[order(unique(OBS$X))]
-obsans = rep(0,length(Xunique))
-answer = rep(0,length(Xunique))
+answer = rep(0,4)
 idx = 1
 yval = 1 
-for (xval in Xunique){
-  # obsans[idx] = nrow(subset(OBS,X==xval & Y==yval))/nrow(subset(OBS,X==xval))
-  answer[idx] = nrow(subset(INTV,X.intv==xval & Y.intv==yval))/nrow(subset(INTV,X.intv==xval))
-  idx = idx + 1 
+for (x1val in c(0,1)){
+  for (x2val in c(0,1)){
+    answer[idx] = nrow(subset(INTV, X1.intv==x1val & X2.intv==x2val & Y.intv==yval))/nrow(subset(INTV, X1.intv==x1val & X2.intv==x2val))
+    idx = idx + 1   
+  }
 }
+
 proportion_X = rep(0,length(Xunique)); idx = 1
 for (xval in Xunique){
   proportion_X[idx] = nrow(subset(OBS,X==xval))/nrow(OBS)
