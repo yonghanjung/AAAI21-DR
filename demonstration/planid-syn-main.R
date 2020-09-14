@@ -3,7 +3,14 @@ library(xgboost)
 library(boot)
 library(mise)
 library(tictoc)
-mise()
+# mise()
+
+suppressMessages(source('planid-syn-data.R')) # Napkin dataset generation code 
+# source('napkin-WERM.R')
+suppressMessages(source('planid-syn-plugin.R'))
+suppressMessages(source('planid-syn-DR.R'))
+
+args = commandArgs(trailingOnly = TRUE)
 
 computePerformance = function(OBS,answer,prediction){
   X1unique = unique(OBS$X1)[order(unique(OBS$X1))]
@@ -86,17 +93,12 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,answer,OBS){
   # print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
 }
 
-################################
-# Dataset Generation 
-################################
-source('planid-syn-data.R') # Napkin dataset generation code 
-# source('napkin-WERM.R')
-source('planid-syn-plugin.R')
-source('planid-syn-DR.R')
 
-N = 1000
+
+
+N = as.numeric(args[1])
 Nintv = 1000000
-D = 10 # Cardinality of W 
+D = as.numeric(args[2]) # Cardinality of W 
 numCate = 2
 C = numCate - 1
 

@@ -3,7 +3,18 @@ library(xgboost)
 library(boot)
 library(mise)
 library(tictoc)
-mise()
+# mise()
+
+################################
+# Dataset Generation 
+################################
+suppressMessages(source('napkin-syn-data.R')) # Napkin dataset generation code 
+# source('napkin-WERM.R')
+suppressMessages(source('napkin-syn-plugin.R'))
+suppressMessages(source('napkin-syn-DR.R'))
+
+args = commandArgs(trailingOnly = TRUE)
+
 
 computePerformance = function(OBS,answer,prediction){
   Xunique = unique(OBS$X)[order(unique(OBS$X))]
@@ -72,21 +83,18 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,answer,OBS){
   # print(paste("Winner: ",colnames(tmp_mat)[which.min(tmp_mat)],sep=""))
 }
 
-################################
-# Dataset Generation 
-################################
-source('napkin-syn-data.R') # Napkin dataset generation code 
-# source('napkin-WERM.R')
-source('napkin-syn-plugin.R')
-source('napkin-syn-DR.R')
 
-N = 1000
+N = as.numeric(args[1])
+D = as.numeric(args[2]) # Cardinality of W
+# N = 1000
+# D = 5 
+
 Nintv = 1000000
-D = 10 # Cardinality of W 
+
 numCate = 2
 C = numCate - 1
 
-seednum = sample(1:1000000,1)
+seednum = sample(1:1000000,1); print(seednum)
 mytmp = dataGen(seednum,N,Nintv,D,C)
 OBS = mytmp[[1]] # Observational dataset 
 INTV = mytmp[[2]]

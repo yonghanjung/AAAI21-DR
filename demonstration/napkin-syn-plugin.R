@@ -4,6 +4,42 @@ source('DRModule.R')
 
 PlugInEstimator = function(OBS,mydim,mismode,seednum){
   # Compute P(Y=1 | w,r,x)
+  ####################################################
+  # TrainModel 
+  ####################################################
+  TrainModel = function(DATA_Train, DATA_Eval, OBS, xfix, yfix, mismode){
+    W = DATA_Train[,c(1:mydim)] # High dim surrogate
+    R = DATA_Train[,(mydim+1)] # Cofounder 0-numCate
+    X = DATA_Train[,(mydim+2)]
+    Y = DATA_Train[,(mydim+3)]
+    
+    IyTrain = (Y == yfix)*1
+    Rtrain = R
+    Xtrain = X
+    if (mismode == 1){
+      IyTrain = distortVar(IyTrain,seednum)
+      Xtrain = distortVar(Xtrain,seednum)
+    }
+    if (mismode == 2){
+      Rtrain = distortVar(Rtrain,seednum)
+    }
+    IxTrain = (Xtrain == xfix)*1
+    IxyTrain = IyTrain*IxTrain
+    
+    mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS))
+    
+    regvallist = seq(0,10,by=0.2)
+    # lambda.XY = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxyTrain, learningbinary=1, TFcontinuous=F)
+    lambda.XY = mylambda
+    model.xy.RW = learnXG(inVar = data.matrix(data.frame(R, W)),labelval = IxyTrain, regval = lambda.XY, binommode = 1)
+    
+    # lambda.X = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(R=DATA_Train$R, W=DATA_Train$W)), mylabel=IxTrain, learningbinary=1, TFcontinuous=F)
+    lambda.X = mylambda
+    model.x.RW = learnXG(inVar = data.matrix(data.frame(R, W)),labelval = IxTrain, regval = lambda.X, binommode = 1)
+    
+    return(list(model.xy.RW, model.x.RW))
+  }
+  
   ExpYParam_Real = function(myallpossible,myDATA,mylambda){
     W = myDATA[,c(1:mydim)] # High dim surrogate
     R = myDATA[,(mydim+1)] # Cofounder 0-numCate
@@ -140,6 +176,8 @@ PlugInEstimator = function(OBS,mydim,mismode,seednum){
   X = OBS[,(mydim+2)]
   Y = OBS[,(mydim+3)]
   
+  
+  
   Wunique = c(0,1)
   Runique = unique(R)[order(unique(R))]
   Xunique = unique(X)[order(unique(X))]
@@ -152,71 +190,99 @@ PlugInEstimator = function(OBS,mydim,mismode,seednum){
   
   mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
   
-  ################################################################################ 
-  # Enumerate all possible values of column
-  ################################################################################
-  tmp = c()
-  for (d in 1:D){
-    tmp = append(tmp,list(Wunique)) # W 
-  }
-  Wname = paste("W",1:D,sep="")
-  tmp = append(tmp,list(Runique)) # R 
-  tmp = append(tmp,list(Xunique)) # X 
-  allpossible = expand.grid(tmp)
-  colnames(allpossible) = c(Wname,'R','X')
-  ################################################################################
-  
-  Ytable1 = ExpYParam_Real(allpossible,DATA_Train,mylambda)
-  Ytable2 = RunTryCatchProb_plugin(ExpYParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
-  Ytable = (Ytable1 + Ytable2)/2
-  
-  # Compute P(x | r,w )
-  PxTable1 = ProbXParam_Real(allpossible,DATA_Train,mylambda)
-  PxTable2 = RunTryCatchProb_plugin(ProbXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
-  PxTable = (PxTable1 + PxTable2)/2 
-  
-  # Compute P(r,x)
-  PrxTable1 = ProbRXParam_Real(allpossible,DATA_Train,mylambda)
-  PrxTable2 = RunTryCatchProb_plugin(ProbRXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
-  PrxTable = (PrxTable1+PrxTable2)/2  
-  
-  # Compute P(w)
-  PwTable1 = ProbWParam_Real(allpossible,DATA_Train,mylambda)
-  PwTable2 = RunTryCatchProb_plugin(ProbWParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
-  PwTable = (PwTable1+PwTable2)/2
-  
-  allpossibleOrig = allpossible
-  
-  ComputeVal = allpossible
-  ComputeVal$val1 = Ytable$prob * PxTable$prob * PwTable$prob
-  ComputeVal$val2 = PxTable$prob * PwTable$prob
-  
-  ## Marginalizing over W
-  tmp = c()
-  tmp = append(tmp, list(Runique)) # R
-  tmp = append(tmp,list(Xunique)) # X
-  allpossible = expand.grid(tmp)
-  colnames(allpossible) = c('R','X')
-  ComputeVal.MarginW = allpossible
-  ComputeVal.MarginW$val1 = 0
-  ComputeVal.MarginW$val2 = 0
-  
-  for (rval in Runique){
-    for(xval in Xunique){
-      ComputeVal.MarginW[ComputeVal.MarginW$R==rval & ComputeVal.MarginW$X==xval,'val1'] = sum(ComputeVal[ComputeVal$X==xval & ComputeVal$R==rval,'val1'],na.rm=T)
-      ComputeVal.MarginW[ComputeVal.MarginW$R==rval & ComputeVal.MarginW$X==xval,'val2'] = sum(ComputeVal[ComputeVal$X==xval & ComputeVal$R==rval,'val2'],na.rm=T)
+  yfix = 1 
+  myYx = c(0,0)
+  for (xval in c(0,1)){
+    xfix = xval
+    trained_model = TrainModel(DATA_Train, DATA_Eval, OBS, xfix, yfix, mismode)  
+    model.xy.RW = trained_model[[1]]
+    model.x.RW = trained_model[[2]]
+    
+    W = DATA_Eval[,c(1:mydim)] # High dim surrogate
+    R = DATA_Eval[,(mydim+1)] # Cofounder 0-numCate
+    X = DATA_Eval[,(mydim+2)]
+    Y = DATA_Eval[,(mydim+3)]
+    
+    prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
+    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
+    
+    ## Convergence Noise ! 
+    if (mismode == 0){
+      cvgrate = 3 
+      myN = nrow(DATA_Train)*2
+      prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
     }
+    myYx[xval+1] = mean(prob.xy.RW)/mean(prob.x.RW)
   }
-  ComputeVal.MarginW$val3 = exp(log(ComputeVal.MarginW$val1) - log(ComputeVal.MarginW$val2))
+  return(myYx)
   
-  rList = rep(0,length(Runique))
-  idx = 1 
-  for (rval in Runique){
-    rList[idx] = sum(PrxTable[PrxTable$W==0 & PrxTable$R==rval,'prob'])
-    idx = idx + 1 
-  }
-  RFix = Runique[which.max(rList)]
-  Yx = ComputeVal.MarginW[ComputeVal.MarginW$R==RFix,'val3']
-  return(Yx)
+  
+  # ################################################################################ 
+  # # Enumerate all possible values of column
+  # ################################################################################
+  # tmp = c()
+  # for (d in 1:D){
+  #   tmp = append(tmp,list(Wunique)) # W 
+  # }
+  # Wname = paste("W",1:D,sep="")
+  # tmp = append(tmp,list(Runique)) # R 
+  # tmp = append(tmp,list(Xunique)) # X 
+  # allpossible = expand.grid(tmp)
+  # colnames(allpossible) = c(Wname,'R','X')
+  # ################################################################################
+  # 
+  # Ytable1 = ExpYParam_Real(allpossible,DATA_Train,mylambda)
+  # Ytable2 = RunTryCatchProb_plugin(ExpYParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
+  # Ytable = (Ytable1 + Ytable2)/2
+  # 
+  # # Compute P(x | r,w )
+  # PxTable1 = ProbXParam_Real(allpossible,DATA_Train,mylambda)
+  # PxTable2 = RunTryCatchProb_plugin(ProbXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
+  # PxTable = (PxTable1 + PxTable2)/2 
+  # 
+  # # Compute P(r,x)
+  # PrxTable1 = ProbRXParam_Real(allpossible,DATA_Train,mylambda)
+  # PrxTable2 = RunTryCatchProb_plugin(ProbRXParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
+  # PrxTable = (PrxTable1+PrxTable2)/2  
+  # 
+  # # Compute P(w)
+  # PwTable1 = ProbWParam_Real(allpossible,DATA_Train,mylambda)
+  # PwTable2 = RunTryCatchProb_plugin(ProbWParam_Real,allpossible,DATA_Train,DATA_Eval,mylambda)
+  # PwTable = (PwTable1+PwTable2)/2
+  # 
+  # allpossibleOrig = allpossible
+  # 
+  # ComputeVal = allpossible
+  # ComputeVal$val1 = Ytable$prob * PxTable$prob * PwTable$prob
+  # ComputeVal$val2 = PxTable$prob * PwTable$prob
+  # 
+  # ## Marginalizing over W
+  # tmp = c()
+  # tmp = append(tmp, list(Runique)) # R
+  # tmp = append(tmp,list(Xunique)) # X
+  # allpossible = expand.grid(tmp)
+  # colnames(allpossible) = c('R','X')
+  # ComputeVal.MarginW = allpossible
+  # ComputeVal.MarginW$val1 = 0
+  # ComputeVal.MarginW$val2 = 0
+  # 
+  # for (rval in Runique){
+  #   for(xval in Xunique){
+  #     ComputeVal.MarginW[ComputeVal.MarginW$R==rval & ComputeVal.MarginW$X==xval,'val1'] = sum(ComputeVal[ComputeVal$X==xval & ComputeVal$R==rval,'val1'],na.rm=T)
+  #     ComputeVal.MarginW[ComputeVal.MarginW$R==rval & ComputeVal.MarginW$X==xval,'val2'] = sum(ComputeVal[ComputeVal$X==xval & ComputeVal$R==rval,'val2'],na.rm=T)
+  #   }
+  # }
+  # ComputeVal.MarginW$val3 = exp(log(ComputeVal.MarginW$val1) - log(ComputeVal.MarginW$val2))
+  # 
+  # rList = rep(0,length(Runique))
+  # idx = 1 
+  # for (rval in Runique){
+  #   rList[idx] = sum(PrxTable[PrxTable$W==0 & PrxTable$R==rval,'prob'])
+  #   idx = idx + 1 
+  # }
+  # RFix = Runique[which.max(rList)]
+  # Yx = ComputeVal.MarginW[ComputeVal.MarginW$R==RFix,'val3']
+  # return(Yx)
 }
 

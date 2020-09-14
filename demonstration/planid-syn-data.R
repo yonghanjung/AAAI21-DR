@@ -48,7 +48,7 @@ dataGen = function(seednum,N,Nintv,D,C){
   
   fR = function(N,X1){
     Ur = rnorm(N,0,1)
-    R = rbinom(N,size=1,inv.logit(-1*X1 + 0.5 - Ur   ))
+    R = rbinom(N,size=1,inv.logit(-1*X1 - Ur*(2*X1-1)   ))
     return(R)
   }
   

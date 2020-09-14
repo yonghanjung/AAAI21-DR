@@ -347,8 +347,14 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 
 # DML Final 
 # instancename = "Result/napkin-0909-2015"; lossname = "weight"; ylimits0=c(0,0.20); ylimits1 = c(0,0.20); ylimits2 = c(0,0.20); xlimits = c(0,10000); boxlimits = c(0,0.25); mean_median = 'mean' # Final # Less decaying in DR2 
-instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+# instancename = "Result/planid-0909-0800"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
 
+# DML Multi D10
+# instancename = "Result/napkin-D10-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+# instancename = "Result/planid-D10-0913-2300"; lossname = "weight"; ylimits0=c(0,0.1); ylimits1 = c(0,0.5); ylimits2 = c(0,0.1); xlimits = c(0,10000); boxlimits = c(0,0.5); mean_median = 'mean' # Final
+
+# DML Multi D15
+instancename = "Result/napkin-D15-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
 
 mismode = 0
 df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))
