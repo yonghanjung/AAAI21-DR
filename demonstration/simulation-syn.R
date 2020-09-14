@@ -68,7 +68,7 @@ library(tictoc)
 ## nohup taskset -c 16-23 Rscript simulation-syn.R 'napkin' 50 500 15 1 20 'D15-0913-2300' >log-napkin-D15-0913-2300.txt & 
 ## nohup taskset -c 24-31 Rscript simulation-syn.R 'planid' 50 500 15 1 20 'D15-0913-2300' >log-planid-D15-0913-2300.txt & 
 
-## nohup taskset -c 0-7 Rscript simulation-syn.R 'napkin' 50 500 20 1 20 'D20-0914-0800' >log-napkin-D20-0914-0800.txt & 
+## nohup taskset -c 0-7 Rscript simulation-syn.R 'napkin' 50 500 20 1 20 'D20-0914-0830' >log-napkin-D20-0914-0830.txt & 
 ## nohup taskset -c 8-15 Rscript simulation-syn.R 'planid' 50 500 10 1 20 'D10-0914-0800' >log-planid-D10-0914-0800.txt & 
 ## nohup taskset -c 16-23 Rscript simulation-syn.R 'planid' 50 500 15 1 20 'D15-0914-0800' >log-planid-D15-0914-0800.txt & 
 ## nohup taskset -c 24-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0914-0800' >log-planid-D20-0914-0800.txt & 

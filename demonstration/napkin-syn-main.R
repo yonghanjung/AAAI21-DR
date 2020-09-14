@@ -84,10 +84,10 @@ ResultingPerformanceTable_Weight = function(PIanswer,DRanswer,answer,OBS){
 }
 
 
-N = as.numeric(args[1])
-D = as.numeric(args[2]) # Cardinality of W
+# N = as.numeric(args[1])
+# D = as.numeric(args[2]) # Cardinality of W
 # N = 1000
-# D = 5 
+# D = 5
 
 Nintv = 1000000
 

@@ -40,6 +40,37 @@ PlugInEstimator = function(OBS,mydim,mismode,seednum){
     return(list(model.xy.RW, model.x.RW))
   }
   
+  GettingResult = function(DATA_Train,DATA_Eval){
+    mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+    
+    yfix = 1 
+    myYx = c(0,0)
+    for (xval in c(0,1)){
+      xfix = xval
+      trained_model = TrainModel(DATA_Train, DATA_Eval, OBS, xval, yfix, mismode)  
+      model.xy.RW = trained_model[[1]]
+      model.x.RW = trained_model[[2]]
+      
+      W = DATA_Eval[,c(1:mydim)] # High dim surrogate
+      R = DATA_Eval[,(mydim+1)] # Cofounder 0-numCate
+      X = DATA_Eval[,(mydim+2)]
+      Y = DATA_Eval[,(mydim+3)]
+      
+      prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
+      prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
+      
+      ## Convergence Noise ! 
+      if (mismode == 0){
+        cvgrate = 3 
+        myN = nrow(DATA_Train)*2
+        prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+        prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
+      }
+      myYx[xval+1] = mean(prob.xy.RW)/mean(prob.x.RW)
+    }
+    return(myYx)
+  }
+  
   ExpYParam_Real = function(myallpossible,myDATA,mylambda){
     W = myDATA[,c(1:mydim)] # High dim surrogate
     R = myDATA[,(mydim+1)] # Cofounder 0-numCate
@@ -171,12 +202,12 @@ PlugInEstimator = function(OBS,mydim,mismode,seednum){
     return(myallpossible)
   }
   
+  
+  
   W = OBS[,c(1:mydim)] # High dim surrogate
   R = OBS[,(mydim+1)] # Cofounder 0-numCate
   X = OBS[,(mydim+2)]
   Y = OBS[,(mydim+3)]
-  
-  
   
   Wunique = c(0,1)
   Runique = unique(R)[order(unique(R))]
@@ -188,33 +219,10 @@ PlugInEstimator = function(OBS,mydim,mismode,seednum){
   DATA_Train = tmp[[1]]
   DATA_Eval = tmp[[2]]
   
-  mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+  myYx_a = GettingResult(DATA_Train,DATA_Eval)  
+  myYx_b = GettingResult(DATA_Eval,DATA_Train)  
+  myYx = (myYx_a + myYx_b)/2
   
-  yfix = 1 
-  myYx = c(0,0)
-  for (xval in c(0,1)){
-    xfix = xval
-    trained_model = TrainModel(DATA_Train, DATA_Eval, OBS, xfix, yfix, mismode)  
-    model.xy.RW = trained_model[[1]]
-    model.x.RW = trained_model[[2]]
-    
-    W = DATA_Eval[,c(1:mydim)] # High dim surrogate
-    R = DATA_Eval[,(mydim+1)] # Cofounder 0-numCate
-    X = DATA_Eval[,(mydim+2)]
-    Y = DATA_Eval[,(mydim+3)]
-    
-    prob.xy.RW = predict(model.xy.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
-    prob.x.RW = predict(model.x.RW,newdata=data.matrix(data.frame(R=DATA_Eval$R,W)),type='response')
-    
-    ## Convergence Noise ! 
-    if (mismode == 0){
-      cvgrate = 3 
-      myN = nrow(DATA_Train)*2
-      prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
-      prob.x.RW = fix_pred(prob.x.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
-    }
-    myYx[xval+1] = mean(prob.xy.RW)/mean(prob.x.RW)
-  }
   return(myYx)
   
   
