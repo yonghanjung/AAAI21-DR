@@ -10,11 +10,17 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   ############################################
   TrainModel = function(DATA_Train, DATA_Eval, DATA, mismode){
     # yvalfix = 1 
-    Iy.Train = (DATA_Train$Y==yvalfix)*1  
-    X2train = DATA_Train$X2
-    Rtrain = DATA_Train$R 
-    Ztrain = DATA_Train$Z 
-    X1train = DATA_Train$X1 
+    Z = DATA_Train[,c(1:D)] 
+    R = DATA_Train[,(D+1)]
+    X1 = DATA_Train[,(D+2)] 
+    X2 = DATA_Train[,(D+3)]
+    Y = DATA_Train[,(D+4)]
+    
+    Iy.Train = Y
+    X2train = X2
+    Rtrain = R
+    Ztrain = Z
+    X1train = X1
     
     if (mismode == 1){
       Iy.Train = distortVar(Iy.Train,seednum)
@@ -24,36 +30,89 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
     }
     if (mismode == 2){
       Rtrain = distortVar(Rtrain,seednum)
+      # Rtrain = mapply(function(myvar){
+      #   return(xor(myvar,1)*1)
+      # },Rtrain)
+      Rtrain = rbinom(n=length(Rtrain),size = 1,prob = 0.96)
       X2train = distortVar(X2train,seednum)
     }
     # 
     # # Iy.Test = (DATA_Eval$Y==yvalfix)*1
-    mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
-    Iy = (DATA$Y==yvalfix)*1
+    mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+    # Iy = (DATA_Train$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)
     # regvallist = seq(0,10,by=0.2)
     # lambda.Y = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z, R=DATA$R, X2=DATA$X2)), mylabel=Iy, learningbinary=1, TFcontinuous=0)
     lambda.Y = mylambda
     # lambda.Y = rep(0,nrow(DATA_Train))
-    model.Y = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z, R=DATA_Train$R, X2=DATA_Train$X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
+    # model.Y = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z, R=DATA_Train$R, X2=DATA_Train$X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
+    model.Y = learnXG(inVar = data.matrix(data.frame(Z,R,X1,X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
     
     # Train the model for P(X2 | X1,Z)
     # lambda.X2 = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1, Z=DATA$Z)), mylabel=DATA$X2, learningbinary=0,TFcontinuous=0)
-    lambda.X2 = mylambda
+    # lambda.X2 = mylambda
     # lambda.X2 = rep(0,nrow(DATA_Train))
-    model.X2.ZX1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z)), labelval = X2train, regval = lambda.X2, binommode = 0)
+    # model.X2.ZX1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1, Z=DATA_Train$Z)), labelval = X2train, regval = lambda.X2, binommode = 0)
     
     # Train the model for P(R | X1)
     # lambda.R = learnHyperParam(regvallist=regvallist, invar=data.matrix(data.frame(X1=DATA$X1)), mylabel=DATA$R, learningbinary=0,TFcontinuous=0)
     lambda.R = mylambda
     # lambda.R = rep(0,nrow(DATA_Train))
-    model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1)),labelval = Rtrain, regval = lambda.R, binommode = 0)
+    model.R.X1 = learnXG(inVar = data.matrix(data.frame(X1=DATA_Train$X1)),labelval = Rtrain, regval = lambda.R, binommode = 1)
     
     # Train the model for P(X1)
-    model.X1 = mean(X1train)
+    # model.X1 = mean(X1train)
     
-    return(list(model.Y,model.X2.ZX1,model.R.X1,model.X1))
+    return(list(model.Y,model.R.X1))
+  }
+  
+  GettingResult = function(DATA_Train,DATA_Eval){
+    mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+    
+    trained_model = TrainModel(DATA_Train, DATA_Eval, OBS, mismode)
+    myYx = c(0,0,0,0); iteridx = 1 
+    
+    Z = DATA_Eval[,c(1:D)] 
+    R = DATA_Eval[,(D+1)]
+    X1 = DATA_Eval[,(D+2)] 
+    X2 = DATA_Eval[,(D+3)]
+    Y = DATA_Eval[,(D+4)]
+    
+    # model.Y = learnXG(inVar = data.matrix(data.frame(Z,R,X1,X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
+    model.Y = trained_model[[1]]
+    model.R = trained_model[[2]]
+    for (x1val in c(0,1)){
+      for (x2val in c(0,1)){
+        myYxval = 0
+        for (rval in c(0,1)){
+          prob.Y = predict(model.Y,newdata=data.matrix(data.frame(Z,R=rep(rval,nrow(DATA_Eval)),X1,X2=rep(x2val,nrow(DATA_Eval)))),type='response')
+          if (mismode == 0){
+            cvgrate =  4
+            myN = nrow(DATA_Train)*2
+            prob.Y = fix_pred( prob.Y + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+            prob.Y = fix_pred( prob.Y + rnorm(n=nrow(DATA_Train), mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate))    )
+          }
+          # prob.Y = predict(model.Y,newdata=data.matrix(data.frame(Z,R,X1,X2)),type='response')
+          pred.R =predict(model.R,newdata=as.matrix(data.frame(X1=rep(x1val,1))),type='response')  
+          prob.R = pred.R * rval + (1-pred.R)*(1-rval)
+          # if (mismode == 2){
+          #   prob.R = mis_pred(prob.R)
+          #   # prob.R = mis_pred(prob.R)
+          # }
+          # Rmat = c(0,0)
+          # Rmat[rval+1] = 1 
+          # prob.R = t(Rmat) %*% pred.R
+          # prob.R = as.numeric(prob.R[1])
+          # pred.R = predict(model.R,newdata=as.matrix(data.frame(X1=rep(x1val,nrow(DATA_Eval)))),type='response')  
+          # prob.R = pred.R*rval + (1-pred.R)*(1-rval)
+          myYxval = myYxval + mean(prob.Y)*prob.R
+        }
+        myYx[iteridx] = myYxval
+        iteridx = iteridx + 1 
+      }
+    }
+    return(myYx)
   }
   
   Expect.Y = function(myallpossible,DATA,mylambda){
@@ -177,100 +236,133 @@ PlugInEstimator = function(OBS,D,mismode,seednum){
   DATA_Train = tmp[[1]]
   DATA_Eval = tmp[[2]]
   
-  mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+  myYx1 = GettingResult(DATA_Train,DATA_Eval)
+  myYx2 = GettingResult(DATA_Eval,DATA_Train)
+  myYx = (myYx1 + myYx2)/2
   
-  trained_model1 = TrainModel(DATA_Train, DATA_Eval, OBS, mismode)
-  trained_model1 = TrainModel(DATA_Train, DATA_Eval, OBS, mismode)
+  return(myYx)
   
-  
-  # Enumerate all possible values of column
-  tmp = c()
-  for (d in 1:D){
-    tmp = append(tmp,list(Zunique)) # Z 
-  }
-  Zname = paste("Z",1:D,sep="")
-  tmp = append(tmp,list(X1unique)) # R # RiskAversion: 0 highest 
-  tmp = append(tmp, list(Zunique)) # X1
-  tmp = append(tmp,list(Runique)) # X2
-  allpossible = expand.grid(tmp)
-  colnames(allpossible) = c(Zname,'R','X1','X2')
-  
-  mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
-  
-  Ytable1 = Expect.Y(allpossible,DATA_Train,mylambda)
-  Ytable2 = RunTryCatchProb_plugin(Expect.Y, allpossible, DATA_Train, DATA_Eval, mylambda)
-  Ytable = (Ytable1 + Ytable2)/2
-  
-  Prob.Z.X1.Table.1 = Prob.Z.X1(allpossible,DATA_Train,mylambda)
-  Prob.Z.X1.Table.2 = RunTryCatchProb_plugin(Prob.Z.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
-  Prob.Z.X1.Table = (Prob.Z.X1.Table.1 + Prob.Z.X1.Table.2)/2
-  
-  Prob.R.X1.Table.1 = Prob.R.X1(allpossible,DATA_Train,mylambda)
-  Prob.R.X1.Table.2 = RunTryCatchProb_plugin(Prob.R.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
-  Prob.R.X1.Table = (Prob.R.X1.Table.1+Prob.R.X1.Table.2)/2
-  
-  # Causal Query 
-  ## P(y|do(x)) = \sum_{r}P(r|x1)\sum_{x1',z}P(y|x1,z,r,x2)P(z,x1')
-  
-  idx = 1 
-  Array.Prob.X1 = rep(0,length(X1unique))
-  for (x1val in X1unique){
-    Array.Prob.X1[idx] = nrow(subset(OBS,X1==x1val))/nrow(OBS)
-    idx = idx + 1 
-  }
-  Prob.X1.Table = allpossible 
-  Prob.X1.vector = mapply(function(x1val){
-    return(Array.Prob.X1[x1val+1])
-  }, Prob.X1.Table$X1)
-  Prob.X1.Table[,'prob'] = Prob.X1.vector
-  
-  
-  # Compute P(z,x1)
-  Pzx1Table = allpossible 
-  Pzx1Table[,'prob'] = Prob.X1.Table[,'prob'] * Prob.Z.X1.Table[,'prob']
-  
-  ComputeVal = allpossible
-  ComputeVal$val1 = Ytable$prob * Pzx1Table$prob # P(y | x1,x2,r,z) * P(z,x1)
-  ComputeVal$val2 = Prob.R.X1.Table$prob # P(r|x1)
-  
-  ## Marginalizing over X1,Z
-  tmp = c()
-  tmp = append(tmp,list(Runique)) # R
-  tmp = append(tmp,list(X2unique)) # X2
-  allpossible.Marginover.X1Z = expand.grid(tmp)
-  colnames(allpossible.Marginover.X1Z) = c('R','X2')
-  allpossible.Marginover.X1Z[,(ncol(allpossible.Marginover.X1Z)+1)] = 0
-  colnames(allpossible.Marginover.X1Z)[ncol(allpossible.Marginover.X1Z)] = 'val1'
-  
-  for (rval in Runique){
-    for(x2val in X2unique){
-      allpossible.Marginover.X1Z[allpossible.Marginover.X1Z$R==rval & allpossible.Marginover.X1Z$X2==x2val,'val1'] = sum(ComputeVal[ComputeVal$X2==x2val & ComputeVal$R==rval,'val1'],na.rm=T)
-    }
-  }
-  
-  ## For all R,X1
-  tmp = c()
-  tmp = append(tmp,list(Runique)) # R
-  tmp = append(tmp,list(X1unique)) # X1
-  allpossible.X1R = expand.grid(tmp)
-  colnames(allpossible.X1R) = c('R','X1')
-  allpossible.X1R[,(ncol(allpossible.X1R)+1)] = 0
-  colnames(allpossible.X1R)[ncol(allpossible.X1R)] = 'val1'
-  
-  for (rval in Runique){
-    for(x1val in X1unique){
-      allpossible.X1R[allpossible.X1R$R==rval & allpossible.X1R$X1==x1val,'val1'] = mean(ComputeVal[ComputeVal$X1==x1val & ComputeVal$R==rval,'val2'],na.rm=T)
-    }
-  }
-  
-  Yx = rep(0,length(X1unique)*length(X2unique))
-  idx = 1 
-  for (x1val in X1unique){
-    for (x2val in X2unique){
-      Yx[idx] = sum(allpossible.Marginover.X1Z[allpossible.Marginover.X1Z$X2==x2val,'val1'] * allpossible.X1R[allpossible.X1R$X1==x1val,'val1'])
-      idx = idx + 1 
-    }
-  }
-  return(Yx)
+  # mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+  # 
+  # trained_model1 = TrainModel(DATA_Train, DATA_Eval, OBS, mismode)
+  # trained_model2 = TrainModel(DATA_Eval, DATA_Train, OBS, mismode)
+  # myYx = c(0,0,0,0); iteridx = 1 
+  # 
+  # Z = DATA_Eval[,c(1:D)] 
+  # R = DATA_Eval[,(D+1)]
+  # X1 = DATA_Eval[,(D+2)] 
+  # X2 = DATA_Eval[,(D+3)]
+  # Y = DATA_Eval[,(D+4)]
+  # 
+  # # model.Y = learnXG(inVar = data.matrix(data.frame(Z,R,X1,X2)),labelval = Iy.Train, regval = lambda.Y, binommode = 1)
+  # model.Y = trained_model1[[1]]
+  # model.R = trained_model1[[2]]
+  # for (x1val in c(0,1)){
+  #   for (x2val in c(0,1)){
+  #     myYxval = 0
+  #     for (rval in c(0,1)){
+  #       prob.Y = predict(model.Y,newdata=data.matrix(data.frame(Z,R=rep(rval,nrow(DATA_Eval)),X1,X2=rep(x2val,nrow(DATA_Eval)))),type='response')
+  #       # prob.Y = predict(model.Y,newdata=data.matrix(data.frame(Z,R,X1,X2)),type='response')
+  #       pred.R = predict(model.R,newdata=as.matrix(data.frame(X1=rep(x1val,nrow(DATA_Eval)))),type='response')  
+  #       prob.R = pred.R*rval + (1-pred.R)*(1-rval)
+  #       myYxval = myYxval + mean(prob.Y)*mean(prob.R)
+  #     }
+  #     myYx[iteridx] = myYxval
+  #     iteridx = iteridx + 1 
+  #   }
+  # }
+  # 
+  # 
+  # # Enumerate all possible values of column
+  # tmp = c()
+  # for (d in 1:D){
+  #   tmp = append(tmp,list(Zunique)) # Z 
+  # }
+  # Zname = paste("Z",1:D,sep="")
+  # tmp = append(tmp,list(X1unique)) # R # RiskAversion: 0 highest 
+  # tmp = append(tmp, list(Zunique)) # X1
+  # tmp = append(tmp,list(Runique)) # X2
+  # allpossible = expand.grid(tmp)
+  # colnames(allpossible) = c(Zname,'R','X1','X2')
+  # 
+  # mylambda = rep(100/sqrt(nrow(OBS)),nrow(OBS)/2)
+  # 
+  # Ytable1 = Expect.Y(allpossible,DATA_Train,mylambda)
+  # Ytable2 = RunTryCatchProb_plugin(Expect.Y, allpossible, DATA_Train, DATA_Eval, mylambda)
+  # Ytable = (Ytable1 + Ytable2)/2
+  # 
+  # Prob.Z.X1.Table.1 = Prob.Z.X1(allpossible,DATA_Train,mylambda)
+  # Prob.Z.X1.Table.2 = RunTryCatchProb_plugin(Prob.Z.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
+  # Prob.Z.X1.Table = (Prob.Z.X1.Table.1 + Prob.Z.X1.Table.2)/2
+  # 
+  # Prob.R.X1.Table.1 = Prob.R.X1(allpossible,DATA_Train,mylambda)
+  # Prob.R.X1.Table.2 = RunTryCatchProb_plugin(Prob.R.X1, allpossible, DATA_Train, DATA_Eval, mylambda)
+  # Prob.R.X1.Table = (Prob.R.X1.Table.1+Prob.R.X1.Table.2)/2
+  # 
+  # # Causal Query 
+  # ## P(y|do(x)) = \sum_{r}P(r|x1)\sum_{x1',z}P(y|x1,z,r,x2)P(z,x1')
+  # 
+  # idx = 1 
+  # Array.Prob.X1 = rep(0,length(X1unique))
+  # for (x1val in X1unique){
+  #   Array.Prob.X1[idx] = nrow(subset(OBS,X1==x1val))/nrow(OBS)
+  #   idx = idx + 1 
+  # }
+  # Prob.X1.Table = allpossible 
+  # Prob.X1.vector = mapply(function(x1val){
+  #   return(Array.Prob.X1[x1val+1])
+  # }, Prob.X1.Table$X1)
+  # Prob.X1.Table[,'prob'] = Prob.X1.vector
+  # 
+  # 
+  # # Compute P(z,x1)
+  # Pzx1Table = allpossible 
+  # Pzx1Table[,'prob'] = Prob.X1.Table[,'prob'] * Prob.Z.X1.Table[,'prob']
+  # 
+  # ComputeVal = allpossible
+  # ComputeVal$val1 = Ytable$prob * Pzx1Table$prob # P(y | x1,x2,r,z) * P(z,x1)
+  # ComputeVal$val2 = Prob.R.X1.Table$prob # P(r|x1)
+  # 
+  # ## Marginalizing over X1,Z
+  # tmp = c()
+  # tmp = append(tmp,list(Runique)) # R
+  # tmp = append(tmp,list(X2unique)) # X2
+  # allpossible.Marginover.X1Z = expand.grid(tmp)
+  # colnames(allpossible.Marginover.X1Z) = c('R','X2')
+  # allpossible.Marginover.X1Z[,(ncol(allpossible.Marginover.X1Z)+1)] = 0
+  # colnames(allpossible.Marginover.X1Z)[ncol(allpossible.Marginover.X1Z)] = 'val1'
+  # 
+  # for (rval in Runique){
+  #   for(x2val in X2unique){
+  #     allpossible.Marginover.X1Z[allpossible.Marginover.X1Z$R==rval & allpossible.Marginover.X1Z$X2==x2val,'val1'] = sum(ComputeVal[ComputeVal$X2==x2val & ComputeVal$R==rval,'val1'],na.rm=T)
+  #   }
+  # }
+  # 
+  # ## For all R,X1
+  # tmp = c()
+  # tmp = append(tmp,list(Runique)) # R
+  # tmp = append(tmp,list(X1unique)) # X1
+  # allpossible.X1R = expand.grid(tmp)
+  # colnames(allpossible.X1R) = c('R','X1')
+  # allpossible.X1R[,(ncol(allpossible.X1R)+1)] = 0
+  # colnames(allpossible.X1R)[ncol(allpossible.X1R)] = 'val1'
+  # 
+  # for (rval in Runique){
+  #   for(x1val in X1unique){
+  #     allpossible.X1R[allpossible.X1R$R==rval & allpossible.X1R$X1==x1val,'val1'] = mean(ComputeVal[ComputeVal$X1==x1val & ComputeVal$R==rval,'val2'],na.rm=T)
+  #   }
+  # }
+  # 
+  # Yx = rep(0,length(X1unique)*length(X2unique))
+  # idx = 1 
+  # for (x1val in X1unique){
+  #   for (x2val in X2unique){
+  #     Yx[idx] = sum(allpossible.Marginover.X1Z[allpossible.Marginover.X1Z$X2==x2val,'val1'] * allpossible.X1R[allpossible.X1R$X1==x1val,'val1'])
+  #     idx = idx + 1 
+  #   }
+  # }
+  # return(Yx)
 }
+
+
 

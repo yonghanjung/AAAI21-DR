@@ -70,8 +70,14 @@ library(tictoc)
 
 ## nohup taskset -c 0-7 Rscript simulation-syn.R 'napkin' 50 500 20 1 20 'D20-0914-0830' >log-napkin-D20-0914-0830.txt & 
 ## nohup taskset -c 8-15 Rscript simulation-syn.R 'planid' 50 500 10 1 20 'D10-0914-0800' >log-planid-D10-0914-0800.txt & 
-## nohup taskset -c 16-23 Rscript simulation-syn.R 'planid' 50 500 15 1 20 'D15-0914-0800' >log-planid-D15-0914-0800.txt & 
-## nohup taskset -c 24-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0914-0800' >log-planid-D20-0914-0800.txt & 
+## nohup taskset -c 16-23 Rscript simulation-syn.R 'planid' 50 500 15 1 20 'D15-0914-0900' >log-planid-D15-0914-0900.txt & 
+## nohup taskset -c 24-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0914-0900' >log-planid-D20-0914-0900.txt &
+
+## nohup taskset -c 16-23 Rscript simulation-syn.R 'planid' 50 500 15 1 20 'D15-0914-1430' >log-planid-D15-0914-1430 & 
+## nohup taskset -c 24-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0914-1430' >log-planid-D20-0914-1430 &
+## nohup taskset -c 16-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0915-0100' >log-planid-D20-0915-0100.txt &
+
+## nohup taskset -c 16-31 Rscript simulation-syn.R 'planid' 50 500 20 1 20 'D20-0915-0100' >log-planid-D20-0915-2030.txt &
 
 
 reportingPerformance_planid = function(OBS,answer,prediction){
@@ -333,13 +339,13 @@ for (nidx in nidx.start:nidx.end){
                           performance_DR_Weight = reportPerformance_Weight(OBS,answer,DRanswer)
                           performance_WERM_Weight = reportPerformance_Weight(OBS,answer,WERManswer)
                           
-                          performance_PI_Abs = performance_PI_Weight
-                          performance_DR_Abs = performance_DR_Weight
-                          performance_WERM_Abs = performance_WERM_Weight
+                          # performance_PI_Abs = performance_PI_Weight
+                          # performance_DR_Abs = performance_DR_Weight
+                          # performance_WERM_Abs = performance_WERM_Weight
                           
-                          # performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
-                          # performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
-                          # performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
+                          performance_PI_Abs = reportingPerformanceAbsolute(OBS,answer,PIanswer)
+                          performance_DR_Abs = reportingPerformanceAbsolute(OBS,answer,DRanswer)
+                          performance_WERM_Abs = reportingPerformanceAbsolute(OBS,answer,WERManswer)
                           
                           iter_result = c(iter_result,c(performance_PI_Weight, performance_DR_Weight, performance_WERM_Weight, performance_PI_Abs,performance_DR_Abs,performance_WERM_Abs))
                         }

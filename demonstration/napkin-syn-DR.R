@@ -87,6 +87,7 @@ DREstimator = function(OBS,mydim,mismode,seednum){
       prob.xy.RW = fix_pred(prob.xy.RW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
       prob.xy.rW = fix_pred(prob.xy.rW + rnorm(n= myN,  mean = myN^(-1/cvgrate), sd = myN^(-1/cvgrate)))
     }
+    
     # if (mismode == 2){
     #   cvgrate = 2 
     #   myN = nrow(DATA_Train)*2

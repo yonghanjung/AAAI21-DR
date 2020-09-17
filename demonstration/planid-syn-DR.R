@@ -52,11 +52,13 @@ DREstimator = function(OBS,D,mismode,seednum){
     }
     if (mismode == 2){
       Rtrain = distortVar(Rtrain,seednum)
+      # Rtrain = rbinom(n=length(Rtrain),size = 1,prob = 0.96)
       X2train = distortVar(X2train,seednum)
     }
     # 
     # # Iy.Test = (DATA_Eval$Y==yvalfix)*1
     mylambda = rep(100/sqrt(nrow(DATA)),nrow(DATA)/2)
+    # mylambda = 0
     Iy = (DATA$Y==yvalfix)*1
     
     # Train the model for P(y|X1,Z,R,X2)

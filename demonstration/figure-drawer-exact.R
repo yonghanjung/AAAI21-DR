@@ -125,7 +125,7 @@ ConstructDrawGG = function(instancename,mismode,lossname,ylimits,xlimits,mean_me
   regmethod = 'auto'
   # xlimits = c(0,5000)
   # xlimits = c(0,max(df.result$Nlist))
-  spanval = 1.5
+  spanval = 0.5
   point_size = 3
   alpha_point = 1
 
@@ -290,6 +290,27 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
   return(myresult)
 }
 
+MakeSummary = function(instancename,mismode){
+  modelname = c('DR','PlugIn','WERM')
+  # mymodel = modelname[1]
+  mymodel_mat = matrix(c(1:20)*500,nrow=20)
+  mymodel_mat = cbind(mymodel_mat,matrix(nrow=20,ncol=6,0))
+  for (mymodel in modelname){
+    if (mymodel == 'WERM'){
+      mymodel = 'DR'
+    }
+    myfilename = paste(instancename,'mis',mismode,'-',mymodel,'_weight.csv',sep="")
+    mydata = ReadCsv(read.csv(myfilename))
+    mydata.quantiles = apply(mydata,2,quantile, probs=c(0.05,0.25,0.5,0.75,0.95))
+    mydata.mean = apply(mydata,2,mean)
+    mymodel_mat = cbind(mymodel_mat,as.matrix(t(rbind(mydata.quantiles,mydata.mean))))
+  }
+  mytmp = read.csv('Result/napkin-0909-2015mis0-summary_weight.csv')
+  colnames(mymodel_mat) = colnames(mytmp)[c(2:ncol(mytmp))]
+  filenames = paste(instancename,'mis',mismode,'-','summary_weight.csv',sep="")
+  write.csv(mymodel_mat,filenames)
+}
+
 # instancename = 'Result/napkin-mismode-0-0815-0100'; ylimits = c(0.0,0.15)
 # instancename = 'Result/napkin-mismode-1-0815-1100'
 
@@ -351,11 +372,18 @@ ConstructGGOutput = function(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 
 # DML Multi D10
 # instancename = "Result/napkin-D10-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
-# instancename = "Result/planid-D10-0913-2300"; lossname = "weight"; ylimits0=c(0,0.1); ylimits1 = c(0,0.5); ylimits2 = c(0,0.1); xlimits = c(0,10000); boxlimits = c(0,0.5); mean_median = 'mean' # Final
+# instancename = "Result/planid-D10-0914-0800"; lossname = "weight"; ylimits0=c(0,0.1); ylimits1 = c(0,0.5); ylimits2 = c(0,0.1); xlimits = c(0,10000); boxlimits = c(0,0.5); mean_median = 'mean' # Final
 
 # DML Multi D15
 # instancename = "Result/napkin-D15-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
-instancename = "Result/planid-D15-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+# instancename = "Result/planid-D15-0913-2300"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+# instancename = "Result/planid-D15-0914-0900"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+# instancename = "Result/planid-D15-0914-1430"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.3); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.3); mean_median = 'mean' # Final
+
+# DML Multi D20
+# MakeSummary(instancename,mismode=2)
+# instancename = "Result/napkin-D20-0914-0830"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.8); ylimits2 = c(0,0.2); xlimits = c(0,10000); boxlimits = c(0,0.8); mean_median = 'mean' # Final
+instancename = "Result/planid-D20-0915-0100"; lossname = "weight"; ylimits0=c(0,0.2); ylimits1 = c(0,0.4); ylimits2 = c(0,0.4); xlimits = c(0,10000); boxlimits = c(0,0.5); mean_median = 'mean' # Final
 
 mismode = 0
 df.result.summary = read.csv(MakeFileName(instancename,mismode,lossname,mymodel='summary'))
@@ -386,15 +414,15 @@ myresult = ConstructGGOutput(instancename,lossname,ylimits0,ylimits1,ylimits2,bo
 FileSave = F 
 if (FileSave){
   print("FileSave")
-  mismode = 3
-  filename = paste("Result/Plot/napkin/napkin-mis",mismode,".pdf",sep="")
-  # filename = paste("Result/Plot/planid/planid-mis",mismode,".pdf",sep="")
+  mismode = 2
+  # filename = paste("Result/Plot/napkin/napkin-syn-mis",mismode,".pdf",sep="")
+  filename = paste("Result/Plot/planid/planid-syn-mis",mismode,".pdf",sep="")
   pdf(file=filename, width=8,heigh=6)
   myresult[[(mismode+1)]]  
   dev.off()
   
-  # filename = "Result/Plot/napkin/napkin-box.pdf"
-  filename = "Result/Plot/planid/planid-box.pdf"
+  # filename = "Result/Plot/napkin/napkin-syn-box.pdf"
+  filename = "Result/Plot/planid/planid-syn-box.pdf"
   pdf(file=filename, width=8,heigh=6)
   myresult[[4]]
   dev.off()
